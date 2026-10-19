@@ -86,8 +86,7 @@ python -m video_classification.cli --config configs/01_per_frame.toml
 | `06_dual_stream.toml` | 4.2.2 | Combine RGB and optical-flow streams on corrected splits |
 
 Hyperparameters are starting values, not tuned results. `05_no_leakage.toml`
-initially names `per_frame`; **replace it with the validation-selected model and
-matching hyperparameters** from 4.1 before the comparison. Never choose using test
+initially names `per_frame`; **replace it with the validation-selected model and matching hyperparameters** from 4.1 before the comparison. Never choose using test
 accuracy. The corrected split sizes are not assumed to match the original data.
 
 The original dataset has 10 classes, 10 sampled RGB frames per video, and
