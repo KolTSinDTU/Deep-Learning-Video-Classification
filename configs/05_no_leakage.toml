@@ -1,0 +1,23 @@
+# Starting values only; tune using validation data.
+# TODO: use the model and hyperparameters selected in task 4.1.
+[experiment]
+name = "05_no_leakage"
+seed = 42
+output_dir = "outputs/05_no_leakage_seed42"
+
+[dataset]
+root = "data/ucf101noleakage"
+regime = "no_leakage"
+num_classes = 10
+num_frames = 10
+image_size = 224
+
+[model]
+name = "per_frame"
+
+[training]
+epochs = 20
+batch_size = 8
+learning_rate = 0.001
+# Zero workers is a portable starting point for Windows and notebooks.
+num_workers = 0

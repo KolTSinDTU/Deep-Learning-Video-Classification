@@ -1,0 +1,22 @@
+# Starting values only; tune using validation data.
+[experiment]
+name = "06_dual_stream"
+seed = 42
+output_dir = "outputs/06_dual_stream_seed42"
+
+[dataset]
+root = "data/ucf101noleakage"
+regime = "no_leakage"
+num_classes = 10
+num_frames = 10
+image_size = 224
+
+[model]
+name = "dual_stream"
+
+[training]
+epochs = 20
+batch_size = 8
+learning_rate = 0.001
+# Zero workers is a portable starting point for Windows and notebooks.
+num_workers = 0

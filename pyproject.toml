@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "video-classification-2026"
+version = "0.1.0"
+description = "DTU video action classification project scaffold"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "torch==2.8.0",
+    "torchvision==0.23.0",
+    "numpy>=1.26,<3",
+    "pandas>=2.2,<3",
+    "Pillow>=10,<13",
+    "matplotlib>=3.8,<4",
+    "scikit-learn>=1.4,<2",
+    "tqdm>=4.66,<5",
+]
+
+[project.optional-dependencies]
+notebooks = ["jupyterlab>=4,<5", "ipykernel>=6,<8"]
+
+[project.scripts]
+video-project = "video_classification.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
