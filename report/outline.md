@@ -42,5 +42,7 @@ matrix or illustrative failures if space permits.
 
 Record tools used, purposes, affected parts, and how outputs were checked.
 Initial entry: Codex assisted with the project directory scaffold, configuration
-files, implementation TODOs, exploration notebook, and report outline. Revise
+files, implementation TODOs, exploration notebook, report outline, and the
+per-frame CNN with video probability aggregation, data adapter, training command,
+validation checkpoint selection, and automated checks. Revise
 this record as the work progresses and follow the course's required wording.

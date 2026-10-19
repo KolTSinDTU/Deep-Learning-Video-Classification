@@ -6,10 +6,12 @@ the source of requirements. The 2025 project has not been copied or modified.
 ## Status
 
 The package layout, experiment configurations, configuration checker, notebook,
-and report outline are ready. Data loading, model architectures, training, and
-evaluation are **implementation tasks**, with interfaces and TODOs in `src/`.
-No datasets, pretrained weights, training results, or Python environment are
-included. No training has been run.
+report outline, and per-frame training pipeline are ready. This includes the
+frame/video data adapter, training loop, validation, and checkpoint saving.
+Other model architectures and standalone final test evaluation remain
+**implementation tasks**, with interfaces and TODOs in `src/`. Datasets and Python
+environments are local dependencies excluded from Git. A limited smoke test has
+passed; no full training experiments have been run.
 
 ## Layout
 
@@ -22,9 +24,9 @@ report/outline.md            Report plan and requirements checklist
 src/video_classification/
     cli.py                   Validate and display an experiment
     config.py                Configuration loading and validation
-    data.py                  Course loader integration interface
+    data.py                  Course CSV/frame adapter for per-frame training
     models/                  Four single-stream approaches and dual stream
-    train.py                 Training implementation starting point
+    train.py                 Per-frame training command and video validation
     evaluate.py              Evaluation implementation starting point
 ```
 
@@ -95,8 +97,10 @@ from the order of names in the brief; read it from the provided CSVs.
 
 ## Implementation order
 
-1. Complete `data.py` using the course loader; verify split membership and labels.
-2. Implement the four models in `models/`, then the training and evaluation loops.
+1. Run the per-frame baseline below. The adapter checks frame availability,
+   class mappings, and exact train/validation video overlap. Subject identity
+   still needs a separate audit; these checks do not fix the original leakage.
+2. Implement the remaining models and extend training and final evaluation.
 3. Record seeds, configurations, validation curves, best checkpoints, and metrics
    under separate `outputs/<experiment>/` directories. Use validation for model
    selection and the test split only for final evaluation.
@@ -108,3 +112,94 @@ from the order of names in the brief; read it from the provided CSVs.
 Launch the notebook after installation with `.venv/Scripts/jupyter-lab.exe` on
 Windows or `.venv/bin/jupyter-lab` on Linux. Select the project virtual environment
 as the kernel.
+
+## Per-frame baseline
+
+`models/per_frame.py` implements `PerFrameCNN`, a small CNN trained from scratch:
+three convolution/ReLU/max-pooling blocks (32, 64, 128 channels), global average
+pooling, and a linear classifier. There are no pretrained weights or downloads.
+Use floating-point RGB inputs, initially scaled to `[0, 1]`, with the same
+preprocessing at training and evaluation. The configured image size is 224.
+
+- `model(frames)` takes `[B, 3, H, W]` and returns **logits** `[B, num_classes]`.
+  Train with cross-entropy and each frame's video label.
+- `model.predict_video(videos)` takes `[B, 3, T, H, W]` and returns
+  **probabilities** `[B, num_classes]`. It applies softmax separately to each
+  frame, then averages probabilities over time. Frame order does not affect this
+  baseline. Compute validation/test accuracy using one prediction per video.
+- Video inference processes all `B * T` frames together. Reduce the video batch
+  size if memory becomes limiting. Call `eval()` and use `inference_mode()` when
+  evaluating; `predict_video` leaves these settings under caller control.
+
+From the project directory, this checks the model on synthetic input:
+
+```python
+import torch
+from video_classification.config import load_config
+from video_classification.models import build_model
+
+config = load_config("configs/01_per_frame.toml")
+model = build_model(config)
+frames = torch.rand(2, 3, 224, 224)
+labels = torch.tensor([0, 1])
+loss = torch.nn.functional.cross_entropy(model(frames), labels)
+loss.backward()
+
+model.eval()
+with torch.inference_mode():
+    videos = torch.rand(1, 3, 10, 224, 224)
+    probabilities = model.predict_video(videos)  # [1, 10]
+    predictions = probabilities.argmax(dim=1)  # one label per video
+```
+
+Run the frame-training and video-aggregation checks with:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+## Train the per-frame baseline
+
+Run these commands from the `2026/Video Classification` directory. The local
+configuration points to `data/ucf101/ufc10`, where the extracted frames and
+metadata are stored. The adapter follows the provided `src/datasets.py` layout
+using portable paths; it does not require changing the supplied reference file.
+
+For a quick pipeline check (two batches per split, one epoch):
+
+```powershell
+.\.venv\Scripts\python.exe -m video_classification.train --config configs/01_per_frame.toml --smoke-test --image-size 112
+```
+
+For a first training experiment on the laptop (two full epochs at 112 pixels):
+
+```powershell
+.\.venv\Scripts\python.exe -m video_classification.train --config configs/01_per_frame.toml --epochs 2 --image-size 112
+```
+
+For the configured baseline (20 epochs at 224 pixels):
+
+```powershell
+.\.venv\Scripts\python.exe -m video_classification.train --config configs/01_per_frame.toml
+```
+
+The command uses Adam with the configured learning rate, shuffles training
+frames, and validates using averaged frame probabilities for each video.
+Validation loss is the negative log-likelihood of those averaged probabilities.
+The best checkpoint has the highest validation video accuracy, with lower
+validation loss breaking ties. Test data is not loaded during training.
+Resizing and scaling to `[0, 1]` are identical for training and validation;
+this initial baseline does not use augmentation or pretrained weights.
+
+Each invocation creates a new timestamped folder under
+`outputs/01_per_frame_seed42/` and prints its full path. It saves `best.pt`,
+`history.csv`, the effective `config.json`, `class_mapping.json`, environment
+details, and a summary. Smoke folders start with `smoke_`, and their files are
+marked accordingly; their partial-split scores are not experiment results.
+
+You can override `--epochs`, `--image-size`, `--batch-size`, `--device`, and
+`--output-dir` without editing the TOML file. `--device auto` uses CUDA when
+available and otherwise CPU. Validation defaults to one video per batch to
+keep memory use low; set `training.validation_batch_size` in TOML to change it.
+Press Ctrl+C to stop. Completed epoch logs and the best saved checkpoint remain;
+rerunning starts a fresh run, not a resumed one.

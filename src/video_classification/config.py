@@ -46,6 +46,11 @@ def load_config(path: str | Path) -> dict:
     rate = config["training"]["learning_rate"]
     if type(rate) not in (int, float) or not 0 < rate < float("inf"):
         raise ValueError("training.learning_rate must be finite and positive")
+    validation_batch = config["training"].get("validation_batch_size", 1)
+    if type(validation_batch) is not int or validation_batch <= 0:
+        raise ValueError("training.validation_batch_size must be a positive integer")
+    if config["training"].get("device", "auto") not in {"auto", "cpu", "cuda"}:
+        raise ValueError("training.device must be auto, cpu, or cuda")
     name = config["experiment"]["name"]
     if not isinstance(name, str) or not name.strip():
         raise ValueError("experiment.name must be a nonempty string")

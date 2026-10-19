@@ -5,7 +5,7 @@ seed = 42
 output_dir = "outputs/01_per_frame_seed42"
 
 [dataset]
-root = "data/ucf101"
+root = "data/ucf101/ufc10"
 regime = "original"
 num_classes = 10
 num_frames = 10
@@ -17,6 +17,9 @@ name = "per_frame"
 [training]
 epochs = 20
 batch_size = 8
+# Validation batches contain entire videos (10 frames each).
+validation_batch_size = 1
+device = "auto"
 learning_rate = 0.001
 # Zero workers is a portable starting point for Windows and notebooks.
 num_workers = 0

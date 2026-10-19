@@ -20,7 +20,7 @@ def main() -> None:
     if args.require_data and not root.is_dir():
         parser.error(f"Dataset directory does not exist: {root}. See data/README.md")
     print(json.dumps(config, indent=2))
-    print("Configuration valid. Model, data, training, and evaluation implementations are still TODO.")
+    print("Configuration valid. This command checks configuration only; it does not train or evaluate.")
     print(f"Dataset root {'exists (contents not validated)' if root.is_dir() else 'is not present yet'}: {root}")
 
 
