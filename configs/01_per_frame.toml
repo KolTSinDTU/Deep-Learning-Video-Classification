@@ -15,7 +15,10 @@ image_size = 224
 name = "per_frame"
 
 [training]
+# Upper limit; validation-loss early stopping may finish sooner.
 epochs = 20
+early_stopping_patience = 5
+early_stopping_min_delta = 0.0001
 batch_size = 8
 # Validation batches contain entire videos (10 frames each).
 validation_batch_size = 1

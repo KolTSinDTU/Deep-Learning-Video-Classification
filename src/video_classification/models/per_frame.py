@@ -2,6 +2,8 @@
 
 from torch import Tensor, nn
 
+from .normalization import normalize_convolutions
+
 
 class PerFrameCNN(nn.Module):
     """Classify RGB frames independently using a CNN trained from scratch.
@@ -11,7 +13,7 @@ class PerFrameCNN(nn.Module):
     data loader. Adaptive pooling allows different spatial resolutions.
     """
 
-    def __init__(self, num_classes: int = 10):
+    def __init__(self, num_classes: int = 10, *, normalization: str = "none"):
         super().__init__()
         if type(num_classes) is not int or num_classes <= 0:
             raise ValueError("num_classes must be a positive integer")
@@ -30,6 +32,7 @@ class PerFrameCNN(nn.Module):
             # One value per feature channel, independent of input resolution.
             nn.AdaptiveAvgPool2d(1),
         )
+        self.features = normalize_convolutions(self.features, normalization)
         self.classifier = nn.Linear(128, num_classes)
 
     def forward(self, frames: Tensor) -> Tensor:

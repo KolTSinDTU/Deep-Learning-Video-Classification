@@ -15,7 +15,10 @@ image_size = 224
 name = "dual_stream"
 
 [training]
+# Upper limit; validation-loss early stopping may finish sooner.
 epochs = 20
+early_stopping_patience = 5
+early_stopping_min_delta = 0.0001
 batch_size = 8
 learning_rate = 0.001
 # Zero workers is a portable starting point for Windows and notebooks.

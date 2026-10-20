@@ -1,0 +1,30 @@
+# Reuse the completed per-frame experiment, then fine-tune on video labels.
+# This has a different training budget from the from-scratch baselines.
+[experiment]
+name = "02_late_fusion_warmstart"
+seed = 42
+output_dir = "outputs/tuning/02_late_fusion_warmstart_seed42"
+
+[dataset]
+root = "data/ucf101/ufc10"
+regime = "original"
+num_classes = 10
+num_frames = 10
+image_size = 112
+
+[model]
+name = "late_fusion"
+normalization = "none"
+
+[training]
+# Upper limit; validation-loss early stopping may finish sooner.
+epochs = 10
+early_stopping_patience = 5
+early_stopping_min_delta = 0.0001
+batch_size = 2
+validation_batch_size = 1
+device = "auto"
+# Start conservatively when fine-tuning already useful features.
+learning_rate = 0.0001
+num_workers = 0
+init_checkpoint = "outputs/01_per_frame_seed42/20261019T082920_119995Z/best.pt"

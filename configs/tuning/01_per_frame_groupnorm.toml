@@ -1,0 +1,28 @@
+# Controlled trial: only GroupNorm differs from the baseline at 112 pixels.
+# Compare with a baseline using --image-size 112 and the same epoch budget.
+[experiment]
+name = "01_per_frame_groupnorm"
+seed = 42
+output_dir = "outputs/tuning/01_per_frame_groupnorm_seed42"
+
+[dataset]
+root = "data/ucf101/ufc10"
+regime = "original"
+num_classes = 10
+num_frames = 10
+image_size = 112
+
+[model]
+name = "per_frame"
+normalization = "group"
+
+[training]
+# Upper limit; validation-loss early stopping may finish sooner.
+epochs = 20
+early_stopping_patience = 5
+early_stopping_min_delta = 0.0001
+batch_size = 8
+validation_batch_size = 1
+device = "auto"
+learning_rate = 0.001
+num_workers = 0

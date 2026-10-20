@@ -44,5 +44,10 @@ Record tools used, purposes, affected parts, and how outputs were checked.
 Initial entry: Codex assisted with the project directory scaffold, configuration
 files, implementation TODOs, exploration notebook, report outline, and the
 per-frame CNN with video probability aggregation, data adapter, training command,
-validation checkpoint selection, and automated checks. Revise
-this record as the work progresses and follow the course's required wording.
+validation checkpoint selection, late fusion using the same CNN architecture,
+early fusion with stacked RGB channels, the 3D CNN, video-level training,
+optional GroupNorm comparison configurations, per-frame-to-late-fusion
+checkpoint initialization, training-run analysis, validation-loss early stopping,
+separate loss-selected checkpoints, and
+automated checks. Revise this record as the work progresses and follow the
+course's required wording.

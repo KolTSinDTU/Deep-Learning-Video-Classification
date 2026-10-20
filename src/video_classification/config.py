@@ -8,6 +8,17 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MODEL_NAMES = {"per_frame", "late_fusion", "early_fusion", "cnn3d", "dual_stream"}
 
 
+def early_stopping_settings(training: dict) -> tuple[int, float]:
+    """Validate early stopping settings; patience zero disables stopping."""
+    patience = training.get("early_stopping_patience", 5)
+    min_delta = training.get("early_stopping_min_delta", 0.0001)
+    if type(patience) is not int or patience < 0:
+        raise ValueError("training.early_stopping_patience must be a nonnegative integer")
+    if type(min_delta) not in (int, float) or not 0 <= min_delta < float("inf"):
+        raise ValueError("training.early_stopping_min_delta must be finite and nonnegative")
+    return patience, float(min_delta)
+
+
 def load_config(path: str | Path) -> dict:
     """Validate a config and resolve dataset/output paths against the project."""
     with Path(path).open("rb") as stream:
@@ -27,6 +38,8 @@ def load_config(path: str | Path) -> dict:
                 raise ValueError(f"Missing configuration value: {section}.{key}")
     if config["model"]["name"] not in MODEL_NAMES:
         raise ValueError(f"model.name must be one of {sorted(MODEL_NAMES)}")
+    if config["model"].get("normalization", "none") not in {"none", "group"}:
+        raise ValueError("model.normalization must be none or group")
     if config["dataset"]["regime"] not in {"original", "no_leakage"}:
         raise ValueError("dataset.regime must be original or no_leakage")
     if config["model"]["name"] == "dual_stream" and config["dataset"]["regime"] != "no_leakage":
@@ -51,10 +64,14 @@ def load_config(path: str | Path) -> dict:
         raise ValueError("training.validation_batch_size must be a positive integer")
     if config["training"].get("device", "auto") not in {"auto", "cpu", "cuda"}:
         raise ValueError("training.device must be auto, cpu, or cuda")
+    early_stopping_settings(config["training"])
     name = config["experiment"]["name"]
     if not isinstance(name, str) or not name.strip():
         raise ValueError("experiment.name must be a nonempty string")
-    for section, key in (("dataset", "root"), ("experiment", "output_dir")):
+    path_settings = [("dataset", "root"), ("experiment", "output_dir")]
+    if "init_checkpoint" in config["training"]:
+        path_settings.append(("training", "init_checkpoint"))
+    for section, key in path_settings:
         raw = config[section][key]
         if not isinstance(raw, str) or not raw.strip():
             raise ValueError(f"{section}.{key} must be a nonempty path")

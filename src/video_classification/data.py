@@ -84,18 +84,21 @@ def _seed_worker(worker_id):
 
 
 def build_dataloaders(config: dict) -> dict[str, DataLoader]:
-    """Return shuffled training frames and ordered validation videos.
+    """Return shuffled training samples and ordered validation videos.
 
+    Per-frame training uses images; fusion and 3D models use whole videos.
     Keep the supplied splits and numeric labels. Exact video overlap is checked;
     this is not a subject-identity audit and does not fix the original leakage.
     Only train/val metadata and frames are accessed.
     """
-    if config["model"]["name"] != "per_frame":
-        raise NotImplementedError("Data loading currently supports the per_frame model")
+    model_name = config["model"]["name"]
+    if model_name not in {"per_frame", "late_fusion", "early_fusion", "cnn3d"}:
+        raise NotImplementedError("Data loading supports per_frame, late_fusion, early_fusion, and cnn3d")
     data, training = config["dataset"], config["training"]
     datasets = {
         split: ActionDataset(Path(data["root"]), split, data["num_frames"],
-                             data["image_size"], per_frame=(split == "train"))
+                             data["image_size"],
+                             per_frame=(split == "train" and model_name == "per_frame"))
         for split in ("train", "val")
     }
     mapping = datasets["train"].class_to_label
