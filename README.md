@@ -5,14 +5,60 @@ the source of requirements. The 2025 project has not been copied or modified.
 
 ## Status
 
-The four single-stream training pipelines are ready: per-frame, late fusion,
-early fusion, and 3D CNN. These include the frame/video data adapter, training
-loop, validation, and checkpoint saving, alongside experiment configurations,
-a configuration checker, notebook, and report outline. Dual stream and standalone
-final test evaluation remain **implementation tasks**, with interfaces and TODOs
-in `src/`. Datasets and Python environments are local dependencies excluded from
-Git. Limited smoke tests check all four pipelines; experiment results belong
-under `outputs/`.
+The five training pipelines are implemented: per-frame, late fusion, early
+fusion, 3D CNN, and RGB/optical-flow dual stream. These include data adapters,
+training, validation, and checkpoint saving. Dual stream requires the corrected
+dataset with its supplied `flows_png` directory; no pairing manifests are needed
+for the course layout. Its pipeline has been tested on
+synthetic data, but the corrected flow files are not available locally for a
+real-data check. Checkpoint evaluation (val/test) and two-stream score fusion are
+implemented in `evaluate.py` and `fuse.py`. See "v2 recipe" below.
+Datasets and Python environments are local dependencies excluded from Git.
+Experiment results belong under `outputs/`.
+
+## v2 recipe
+
+`configs/v2/` reruns every experiment with one shared recipe, so models differ
+only in where time is fused. Older configs are unchanged; every new option
+defaults to the original baseline.
+
+- **Backbone** `vgg_bn`: four stages of two conv-BN-ReLU layers (64/128/256/256),
+  dropout 0.5. The 3D CNN uses the same layout with 3x3x3 kernels and halves time
+  in its last two stages.
+- **Input**: supplied JPEG frames for both split regimes, resized to 112 x 112 and
+  ImageNet-standardized. Augmentation is applied on the fly in memory: one random
+  resized crop, horizontal flip and colour jitter per clip, shared by all of the
+  clip's frames. Nothing is written to disk and the dataset can stay read-only.
+  Flips are disabled for colour-coded flow because hue encodes direction.
+- **Training**: AdamW (lr 1e-3, weight decay 0.05), 3 warmup epochs, then a cosine
+  decay over 60 fixed epochs with no early stopping. Every optimizer step sees 80
+  frames (8 videos, or 80 frames for per-frame). `best.pt` is the checkpoint with
+  the highest validation accuracy; only its weights are kept (about 9-28 MB).
+- **Warm starts** from the per-frame `best.pt`: late fusion copies it, early
+  fusion repeats the RGB input kernel over frames divided by T, and the 3D CNN
+  inflates every kernel along time (I3D). Scratch runs are submitted too.
+- **Both split regimes**: configs 01-04 use the original (leaky) splits, while
+  05, 06, 09 and 10 are the same four models on the corrected splits, so Task 4.2.1
+  can be reported for every model.
+- **Two streams** (4.2.2): `flow_stream` stacks the 9 flow fields into 27 input
+  channels (the Simonyan & Zisserman temporal stream). It is trained separately
+  from the RGB stream (`06_late_fusion_noleak`), and `fuse.py` averages their
+  softmax scores with a flow weight chosen on validation.
+  `08_dual_stream_joint` is the jointly trained feature-fusion alternative.
+
+On the cluster:
+
+```bash
+bash jobs/submit_v2.sh all smoke     # 2-batch checks of every config
+bash jobs/submit_v2.sh all train     # full sweep; SEEDS="42 43 44" for more seeds
+```
+
+Final test numbers, only after all choices are made on validation:
+
+```bash
+python -m video_classification.evaluate --checkpoint outputs/v2/<name>/seed42/<run>/best.pt --split test
+python -m video_classification.fuse --rgb <06 best.pt> --flow <07 best.pt> --output-dir outputs/v2/fusion/seed42 --test
+```
 
 ## Layout
 
@@ -26,9 +72,13 @@ src/video_classification/
     cli.py                   Validate and display an experiment
     config.py                Configuration loading and validation
     data.py                  Course CSV/frame adapter for frame or video training
+    flow_data.py             Explicit RGB/flow pairing and flow preprocessing
     models/                  Four single-stream approaches and dual stream
-    train.py                 2D/3D model training and video validation
-    evaluate.py              Evaluation implementation starting point
+    train.py                 RGB/dual-stream training and video validation
+    transforms.py            Clip-consistent augmentation and input normalization
+    initialization.py        Per-frame warm starts (copy, stack-inflate, I3D-inflate)
+    evaluate.py              Video-level val/test evaluation of one checkpoint
+    fuse.py                  RGB + flow softmax-score fusion, weight chosen on val
 ```
 
 ## Environment setup
@@ -47,9 +97,23 @@ On Linux or an allocated HPC compute node:
 ```bash
 python3 -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install -e '.[notebooks]'
+.venv/bin/python -m pip install --no-cache-dir -e .
 .venv/bin/python -m video_classification.cli --config configs/01_per_frame.toml
 ```
+
+The default install contains the five direct training dependencies: torch,
+torchvision, numpy, Pillow, and tqdm. Their supporting dependencies, including
+GPU runtime libraries for CUDA builds, are also required. Install `.[analysis]`
+for pandas, matplotlib, and scikit-learn, or `.[notebooks]` for the notebook
+environment including those analysis packages. Batch training needs neither extra.
+The supplied reference `src/datasets.py` uses pandas; the current training adapter
+in `src/video_classification/data.py` does not.
+
+For limited HPC storage, use one environment for all four models and add
+`--no-cache-dir` to installation commands. `python -m pip cache info` reports the
+download cache, and `python -m pip cache purge` clears that cache without removing
+installed packages. Check the installed environment size with `du -sh .venv`.
+Changing the dependency list does not remove packages installed previously.
 
 The PyTorch/torchvision pair is pinned together. Choose the appropriate PyTorch
 wheel source for your machine if you need CUDA; GPU availability depends on the
@@ -105,9 +169,10 @@ from the order of names in the brief; read it from the provided CSVs.
 3. Record seeds, configurations, validation curves, best checkpoints, and metrics
    under separate `outputs/<experiment>/` directories. Use validation for model
    selection and the test split only for final evaluation.
-4. Re-run the selected model on the corrected splits, then implement dual stream.
-   Inspect the flow representation before selecting channels, normalization, or
-   augmentations; `flows-png` may be visualizations rather than raw vector data.
+4. Re-run the selected model on the corrected splits, then run dual stream.
+   Use the supplied `flows_png` layout described in `data/README.md` and inspect
+   the PNG representation. Use identical RGB sampling/preprocessing for the
+   comparison; color flow visualizations are distinct from raw vector data.
 5. Write the report with the **course-provided CVPR template** using the outline.
 
 Launch the notebook after installation with `.venv/Scripts/jupyter-lab.exe` on
@@ -120,7 +185,45 @@ as the kernel.
 three convolution/ReLU/max-pooling blocks (32, 64, 128 channels), global average
 pooling, and a linear classifier. There are no pretrained weights or downloads.
 Use floating-point RGB inputs, initially scaled to `[0, 1]`, with the same
-preprocessing at training and evaluation. The configured image size is 224.
+preprocessing at training and evaluation. Single-stream configurations use
+`image_size = "native"` and `frame_source = "native_video"`: the loader reads
+full-resolution PNGs extracted from the original AVI files, with no resizing.
+The original training/validation videos are 320 x 240 (width x height), giving
+tensors with `H=240, W=320`. The supplied JPEGs are already 224 x 224, so simply
+removing the resize transform would not recover the original resolution.
+The dual-stream configuration uses supplied RGB frames to match the supplied
+optical flow; see the dual-stream section below.
+
+Prepare the native frame cache once, with FFmpeg and ffprobe on PATH:
+
+```powershell
+.\.venv\Scripts\python.exe -m video_classification.prepare_frames --root data/ucf101/ufc10 --output-root data/native_frames/original --splits train val
+```
+
+On the cluster, use its dataset root instead (see the HPC guide). The script
+creates the configured `frame_cache_root` (`data/native_frames/original`),
+leaving supplied JPEGs and videos intact. It saves
+10 evenly spaced frames, including the first and last, as lossless RGB PNGs.
+Each video's `sampling.json` records the zero-based indices and source identity.
+The original JPEG sampling indices are unknown, so these are newly sampled
+clips; report this preprocessing change when comparing historical results.
+This preserves full spatial resolution, not every temporal frame. No test data
+is read unless `--splits test` is explicitly requested. Repeating the command
+reuses matching completed caches. Frames batched together must share dimensions.
+
+For historical supplied-JPEG experiments, set `frame_source = "provided"`.
+
+`ToTensor()` converts decoded uint8 RGB values to floating point and divides by
+255. This scales intensities from `[0, 255]` to `[0, 1]`; it does not resize,
+crop, or discard pixels. A consistent, moderate input scale helps optimization
+with the chosen initialization and learning rate. This is not mean/std
+standardization and does not depend on dataset statistics.
+
+Native frames contain about 1.53 times as many pixels as 224 x 224 frames, so
+expect more computation and activation memory. The models already support
+rectangular inputs through adaptive pooling. An explicit `--image-size 112`
+still enables square resizing for a smaller experiment; `--image-size native`
+selects unchanged source dimensions.
 
 - `model(frames)` takes `[B, 3, H, W]` and returns **logits** `[B, num_classes]`.
   Train with cross-entropy and each frame's video label.
@@ -141,14 +244,14 @@ from video_classification.models import build_model
 
 config = load_config("configs/01_per_frame.toml")
 model = build_model(config)
-frames = torch.rand(2, 3, 224, 224)
+frames = torch.rand(2, 3, 240, 320)
 labels = torch.tensor([0, 1])
 loss = torch.nn.functional.cross_entropy(model(frames), labels)
 loss.backward()
 
 model.eval()
 with torch.inference_mode():
-    videos = torch.rand(1, 3, 10, 224, 224)
+    videos = torch.rand(1, 3, 10, 240, 320)
     probabilities = model.predict_video(videos)  # [1, 10]
     predictions = probabilities.argmax(dim=1)  # one label per video
 ```
@@ -178,7 +281,7 @@ For a first training experiment on the laptop (two full epochs at 112 pixels):
 .\.venv\Scripts\python.exe -m video_classification.train --config configs/01_per_frame.toml --epochs 2 --image-size 112
 ```
 
-For the configured baseline (up to 20 epochs at 224 pixels):
+For the configured baseline (the configured epoch budget at native resolution):
 
 ```powershell
 .\.venv\Scripts\python.exe -m video_classification.train --config configs/01_per_frame.toml
@@ -191,7 +294,7 @@ Validation loss is the negative log-likelihood of those averaged probabilities.
 loss breaking ties. `best_loss.pt` has the lowest validation video loss.
 Training stops early when that loss stops improving significantly, as described
 below. Test data is not loaded during training.
-Resizing and scaling to `[0, 1]` are identical for training and validation;
+Native-resolution loading and scaling to `[0, 1]` are identical for training and validation;
 this initial baseline does not use augmentation or pretrained weights.
 
 Each invocation creates a new timestamped folder under
@@ -249,6 +352,21 @@ Override these settings from the command line:
 The trainer returns the run directory, not an in-memory model. Reload the
 chosen checkpoint for evaluation. Earlier runs are preserved.
 
+## Fusion terminology
+
+The per-frame baseline also performs **late fusion**, at the decision level:
+train each frame independently, then average its class probabilities for video
+inference. The configuration named `late_fusion` uses **feature-level late
+fusion**: average frame embeddings and train the encoder/classifier jointly
+with one loss per video. The names distinguish the assignment's experiments,
+not mutually exclusive definitions of fusion.
+
+Fusion is early or late according to where frames are combined in the network;
+aggregation over the time axis alone does not determine this. Both mean-fusion
+models ignore temporal order. With the current linear classifier, mean features
+followed by classification equals mean frame logits, but softmax of that mean
+usually differs from averaging each frame's softmax probabilities.
+
 ## Late fusion with the same CNN
 
 `models/late_fusion.py` implements `LateFusionCNN`. It reuses the encoder and
@@ -267,9 +385,9 @@ frame logits; the per-frame baseline instead averages frame probabilities.
 Training and validation both use complete clips and one target per video.
 Cross-entropy is computed directly from the video logits for numerical stability.
 The `batch_size` setting counts **videos**, with a default of 2 (20 frames for
-the course data), while validation uses 1 video per batch. Resize and `[0, 1]`
-scaling are the same as in the per-frame baseline. Both configs default to 224
-pixels; use matching resolutions when comparing results, and record batch sizes.
+the course data), while validation uses 1 video per batch. Native-resolution loading
+and `[0, 1]` scaling are the same as in the per-frame baseline. Both configs preserve
+the source 320 x 240 frames; use matching resolutions when comparing results, and record batch sizes.
 
 From the project directory, check the pipeline on limited batches:
 
@@ -283,7 +401,7 @@ For a first experiment with two full epochs at 112 pixels:
 .\.venv\Scripts\python.exe -m video_classification.train --config configs/02_late_fusion.toml --epochs 2 --image-size 112
 ```
 
-Omit `--epochs 2 --image-size 112` to use up to 20 epochs at 224 pixels.
+Omit `--epochs 2 --image-size 112` to use the configured epoch budget at native resolution.
 Runs go into new timestamped folders under `outputs/02_late_fusion_seed42/`.
 The history records `train_video_loss`, `train_video_accuracy`, and
 `train_videos`; per-frame runs retain their existing frame-level training columns.
@@ -321,7 +439,7 @@ Start with two full epochs at 112 pixels:
 .\.venv\Scripts\python.exe -m video_classification.train --config configs/03_early_fusion.toml --epochs 2 --image-size 112
 ```
 
-Omit `--epochs 2 --image-size 112` for up to 20 epochs at 224 pixels.
+Omit `--epochs 2 --image-size 112` for the configured epoch budget at native resolution.
 Outputs go to new timestamped folders under `outputs/03_early_fusion_seed42/`.
 Use matching resolutions and frame sampling when comparing models.
 
@@ -345,7 +463,7 @@ preprocessing, and the same checkpoint selection as the fusion models.
 Both training and validation default to **1 video per batch** to limit memory
 use on the laptop. No pretrained weights are used.
 
-Check limited batches at the default 224-pixel resolution:
+Check limited batches at the default native resolution:
 
 ```powershell
 .\.venv\Scripts\python.exe -m video_classification.train --config configs/04_cnn3d.toml --smoke-test
@@ -357,7 +475,7 @@ Start with two full epochs at 112 pixels:
 .\.venv\Scripts\python.exe -m video_classification.train --config configs/04_cnn3d.toml --epochs 2 --image-size 112
 ```
 
-Omit `--epochs 2 --image-size 112` for up to 20 epochs at 224 pixels.
+Omit `--epochs 2 --image-size 112` for the configured epoch budget at native resolution.
 Runs go to new timestamped folders under `outputs/04_cnn3d_seed42/`, with
 video training metrics, validation metrics, and a reloadable best checkpoint.
 Use matching resolutions and frame sampling when comparing all four models.
@@ -375,14 +493,15 @@ The convolution widths and fusion methods stay the same. The default is
 This is a candidate improvement to measure, not a guaranteed accuracy gain.
 
 Four configurations under `configs/tuning/` enable only this architecture
-change. They use 112-pixel inputs, seed 42, and the baseline learning rate and
-batch sizes, matching the laptop experiments. A short trial is:
+change. They use native-resolution inputs, seed 42, and the baseline learning rate and
+batch sizes. Historical laptop experiments used smaller resized inputs; rerun
+the baseline at native resolution for a controlled comparison. A short trial is:
 
 ```powershell
 .\.venv\Scripts\python.exe -m video_classification.train --config configs/tuning/02_late_fusion_groupnorm.toml --epochs 5
 ```
 
-Compare it with the first five epochs of the baseline at 112 pixels. Omit
+Compare it with the first five epochs of the baseline at native resolution. Omit
 `--epochs 5` for a trial of up to 20 epochs. Use `--patience 0` when matching
 the full 20-epoch budget of the historical baselines. Corresponding files exist for per-frame,
 early fusion, and 3D CNN. Runs are saved under `outputs/tuning/`.
@@ -426,3 +545,55 @@ The checkpoint's source path, SHA-256, and epoch are recorded in
 For the report, describe this as per-frame pretraining followed by video
 fine-tuning, with both training budgets recorded. It is a separate experiment
 from training late fusion from scratch.
+
+## RGB and optical-flow dual stream
+
+`models/dual_stream.py` implements `DualStreamCNN`. Two independent copies of
+our 32/64/128-channel 2D encoder process RGB frames and optical flow. Each stream
+averages its frame features over time. The two 128-dimensional video features
+are concatenated, and a learned linear layer maps the resulting 256 features to
+class logits. Both branches and the fusion classifier train jointly from scratch
+with video cross-entropy; optional `model.normalization = "group"` applies to
+both branches. Temporal averaging ignores frame order, while flow encodes motion.
+
+`model(rgb, flow)` returns `[B, num_classes]` logits, and
+`model.predict_video(rgb, flow)` returns softmax probabilities. RGB input is
+`[B, 3, T, H, W]`; flow is `[B, C, T-1, H, W]` in the dataset. The model itself
+allows different positive clip lengths and spatial dimensions per stream.
+`C=3` for RGB color flow PNGs or `C=2` for NumPy horizontal/vertical vectors.
+The loader returns `({"rgb": rgb_clip, "flow": flow_clip}, label)`.
+
+The course dataset is loaded directly from
+`flows_png/<split>/<class>/<video>/flow_1_2.png` through `flow_9_10.png`.
+No pairing manifests are needed. Video paths come from the existing split
+metadata, and flow paths are constructed in numeric frame-pair order. The loader
+checks missing files and split overlap. Custom layouts and native-cache flow
+can use explicit manifests as described in [data/README.md](data/README.md).
+There is no test-split access during
+training. Color PNG inputs are scaled to `[0, 1]`; vector inputs preserve signed
+pixel displacements, rescale u/v if resized, and divide by an explicit
+`dataset.flow_scale`. No augmentation is applied.
+
+The default config uses `frame_source = "provided"` because course flow was
+computed between the supplied sampled frames. `image_size = "native"` preserves
+those files' dimensions; it does not restore original video resolution. To use
+`native_video`, provide flow computed for that cache's exact frame pairs and
+include matching zero-based source indices in the flow manifests. Do not pair
+course flow with newly sampled native RGB frames without verifying this match.
+For a controlled RGB-only comparison, use the same frame source and image size
+in a copy of configuration 5.
+
+After connecting the corrected dataset, run from this project folder:
+
+```powershell
+.\.venv\Scripts\python.exe -m video_classification.train --config configs/06_dual_stream.toml --smoke-test
+```
+
+Omit `--smoke-test` for training with the configured epoch budget and early
+stopping. Batch sizes count videos (default 1 for both training and validation).
+Runs save video metrics, both best checkpoints, configuration, and flow
+preprocessing details under `outputs/06_dual_stream_seed42/`. Rebuild a checkpoint
+with `build_model(checkpoint["config"])`, then load its `model_state_dict`.
+Synthetic tests cover both representations, joint gradients, pairing failures,
+vector resizing, and checkpoint reload; real corrected-data training remains to
+be run once those external files are available.

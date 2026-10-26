@@ -1,0 +1,17 @@
+\section{Background}
+\label{sec:background}
+
+The dataset is a subset of UCF-101 with $N=740$ videos and $C=10$ classes. The set is split into $|\mathcal{D}_{train}| = 500$ and $|\mathcal{D}_{test}| = |\mathcal{D}_{val}| = 120$ videos respectivley.
+
+Each video is represented by ten uniformly sampled RGB frames. The baseline preprocessing uses no data
+augmentation or channel normalization, and the models use no externally
+pretrained weights. Class indices are read from the supplied metadata.
+
+Accuracy is evaluated using one prediction per video.
+Checkpoints are selected by highest validation video accuracy, with lower
+validation loss breaking ties. The test set is reserved for final evaluation
+and has not been used to select these models. Each model was trained using early stopping with a 50-epoch maximum.
+
+There is subject overlap in the original splits:
+different clips of the same person performing an action can occur across
+training and evaluation sets~\cite{course2026}.

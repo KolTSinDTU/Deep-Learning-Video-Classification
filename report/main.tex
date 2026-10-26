@@ -2,6 +2,10 @@
 
 \usepackage{cvpr}
 \input{preamble}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
+% Placeholder for results that are still running on the cluster.
+\newcommand{\pend}{\textcolor{red}{--}}
 
 \definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
 \usepackage[pagebackref,breaklinks,colorlinks,allcolors=cvprblue]{hyperref}
@@ -10,7 +14,7 @@
 \def\confName{CVPR}
 \def\confYear{2026}
 
-\title{Video Classificatoin}
+\title{Project 2: Video Classification}
 
 \author{
 Kolbeinn Tumi Sindrason\\
@@ -20,16 +24,29 @@ Kolbeinn Tumi Sindrason\\
 \begin{document}
 \maketitle
 
+% No abstract is required for this course report.
 \input{sec/1_intro}
 \input{sec/2_background}
 \input{sec/3_method}
 \input{sec/4_experiments}
 \input{sec/5_conclusion}
 
+% Flush all main-text figures/tables before counting the content pages.
+% Only references and the mandatory AI-use statement are outside the limit.
+% Keep the supplied CVPR typography and geometry unchanged.
+\clearpage
+\typeout{REPORT_MAIN_PAGES=\the\numexpr\value{page}-1\relax}
+\ifnum\value{page}>4
+    \PackageError{report}{Main report exceeds the three-page limit}
+        {Shorten the main text, figures, or tables; do not change the CVPR format.}
+\fi
+
 {
     \small
     \bibliographystyle{ieeenat_fullname}
     \bibliography{main}
 }
+
+\input{sec/6_ai_statement}
 
 \end{document}

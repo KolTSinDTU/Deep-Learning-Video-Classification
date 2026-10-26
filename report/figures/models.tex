@@ -1,0 +1,58 @@
+% Where each model combines time. Orange marks the fusion point.
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+    font=\scriptsize, >={Stealth[length=3pt]}, node distance=3.5mm,
+    box/.style={draw, rounded corners=1pt, fill=black!6, minimum height=4.2mm,
+                inner sep=2pt, align=center},
+    fuse/.style={box, fill=orange!35},
+    lab/.style={anchor=west, font=\scriptsize\bfseries, minimum width=12mm, inner sep=0},
+    io/.style={inner sep=1pt, align=center},
+]
+% Per-frame aggregation
+\node[lab] (l1) at (0, 0) {Per-frame};
+\node[io, right=1mm of l1] (x1) {$x_t$};
+\node[box, right=of x1] (c1) {2D CNN + FC};
+\node[box, right=of c1] (s1) {softmax};
+\node[fuse, right=of s1] (f1) {mean$_t$};
+\node[io, right=of f1] (y1) {$\hat y$};
+\draw[->] (x1) -- (c1); \draw[->] (c1) -- (s1); \draw[->] (s1) -- (f1); \draw[->] (f1) -- (y1);
+% Late fusion
+\node[lab] (l2) at (0, -0.7) {Late};
+\node[io, right=1mm of l2] (x2) {$x_t$};
+\node[box, right=of x2] (c2) {2D CNN};
+\node[fuse, right=of c2] (f2) {mean$_t\,h_t$};
+\node[box, right=of f2] (s2) {FC};
+\node[io, right=of s2] (y2) {$\hat y$};
+\draw[->] (x2) -- (c2); \draw[->] (c2) -- (f2); \draw[->] (f2) -- (s2); \draw[->] (s2) -- (y2);
+% Early fusion
+\node[lab] (l3) at (0, -1.4) {Early};
+\node[io, right=1mm of l3] (x3) {$x_{1:T}$};
+\node[fuse, right=of x3] (f3) {stack: $3T$ ch.};
+\node[box, right=of f3] (c3) {2D CNN + FC};
+\node[io, right=of c3] (y3) {$\hat y$};
+\draw[->] (x3) -- (f3); \draw[->] (f3) -- (c3); \draw[->] (c3) -- (y3);
+% 3D CNN
+\node[lab] (l4) at (0, -2.1) {3D CNN};
+\node[io, right=1mm of l4] (x4) {$x_{1:T}$};
+\node[fuse, right=of x4] (c4) {3D CNN ($3{\times}3{\times}3$ kernels)};
+\node[box, right=of c4] (s4) {FC};
+\node[io, right=of s4] (y4) {$\hat y$};
+\draw[->] (x4) -- (c4); \draw[->] (c4) -- (s4); \draw[->] (s4) -- (y4);
+% Two-stream
+\node[lab] (l5) at (0, -3.0) {Two-stream};
+\node[io, right=1mm of l5, yshift=2.6mm] (x5) {$x_{1:T}$};
+\node[box, right=of x5] (c5) {late fusion};
+\node[io, right=1mm of l5, yshift=-2.6mm] (u5) {$u_{1:T-1}$};
+\node[fuse, right=of u5] (g5) {stack: $3(T{-}1)$ ch.\ + CNN};
+\node[fuse, right=of g5, yshift=2.6mm] (f5) {$(1{-}w)\,p_\mathrm{rgb}$\\$+\,w\,p_\mathrm{flow}$};
+\draw[->] (x5) -- (c5); \draw[->] (u5) -- (g5);
+\draw[->] (c5.east) -- node[above, pos=0.5] {$p_\mathrm{rgb}$} (c5.east -| f5.west);
+\draw[->] (g5.east) -- ++(1.5mm, 0) |- ([yshift=-1mm]f5.west);
+\end{tikzpicture}
+\caption{Where each model combines the $T{=}10$ frames (orange). All models
+share the same 2D backbone ($x_t$: RGB frame, $h_t$: its feature vector,
+$u_t$: colour-coded RAFT flow from frame $t$ to $t{+}1$). The two streams are
+trained separately and fused by weighting their softmax scores.}
+\label{fig:models}
+\end{figure}

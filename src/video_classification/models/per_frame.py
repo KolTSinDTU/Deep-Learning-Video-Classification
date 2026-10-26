@@ -1,39 +1,32 @@
-"""A small 2D CNN trained on frames, with probability averaging for videos."""
+"""A 2D CNN trained on frames, with probability averaging for videos."""
 
 from torch import Tensor, nn
 
-from .normalization import normalize_convolutions
+from .backbone import build_backbone
 
 
 class PerFrameCNN(nn.Module):
-    """Classify RGB frames independently using a CNN trained from scratch.
+    """Classify RGB frames independently with a shared 2D backbone.
 
-    Inputs must be floating-point RGB tensors, normally scaled to [0, 1],
-    with height and width of at least 8 pixels. Preprocessing belongs in the
-    data loader. Adaptive pooling allows different spatial resolutions.
+    Inputs must be floating-point RGB tensors (scaled to [0, 1], optionally
+    standardized by the loader) with height and width of at least 8 pixels.
+    Adaptive pooling allows different spatial resolutions. Dropout before the
+    linear classifier has no parameters, so state-dict names are unchanged.
     """
 
-    def __init__(self, num_classes: int = 10, *, normalization: str = "none"):
+    def __init__(self, num_classes: int = 10, *, normalization: str = "none",
+                 backbone: str = "small", pretrained: bool = False, dropout: float = 0.0):
         super().__init__()
         if type(num_classes) is not int or num_classes <= 0:
             raise ValueError("num_classes must be a positive integer")
+        if not 0 <= dropout < 1:
+            raise ValueError("model.dropout must be in [0, 1)")
 
-        self.features = nn.Sequential(
-            # Each block learns spatial features, then halves the resolution.
-            nn.Conv2d(3, 32, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-            # One value per feature channel, independent of input resolution.
-            nn.AdaptiveAvgPool2d(1),
+        self.features, self.feature_dim = build_backbone(
+            backbone, normalization=normalization, pretrained=pretrained
         )
-        self.features = normalize_convolutions(self.features, normalization)
-        self.classifier = nn.Linear(128, num_classes)
+        self.dropout = nn.Dropout(dropout)
+        self.classifier = nn.Linear(self.feature_dim, num_classes)
 
     def forward(self, frames: Tensor) -> Tensor:
         """Map frames [B, 3, H, W] to raw logits [B, num_classes].
@@ -46,14 +39,16 @@ class PerFrameCNN(nn.Module):
         if min(frames.shape[-2:]) < 8:
             raise ValueError("frame height and width must both be at least 8")
         features = self.features(frames).flatten(1)
-        return self.classifier(features)
+        return self.classifier(self.dropout(features))
 
     def predict_video(self, videos: Tensor) -> Tensor:
         """Average frame probabilities for clips [B, 3, T, H, W].
 
         Returns probabilities [B, num_classes], not logits. Softmax is applied
         to each frame BEFORE averaging over time. Use argmax(dim=1) for one
-        predicted label per video. This baseline ignores temporal order.
+        predicted label per video. This is decision-level late fusion at
+        inference; training still uses independent frame losses. This baseline
+        ignores temporal order.
 
         For evaluation, call model.eval() and use torch.inference_mode().
         This method does not change the model's training or gradient mode.

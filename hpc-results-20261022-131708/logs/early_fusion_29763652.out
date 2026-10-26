@@ -1,0 +1,104 @@
+Run directory: /zhome/77/b/223344/projects/video-classification-2026/outputs/03_early_fusion_seed42/20261020T152636_607436Z
+Model: early_fusion; device: cuda; training: 500 videos; validation: 120 videos
+Early stopping: validation video loss; patience=5; min_delta=0.0001
+Epoch 1/20
+  video loss 2.3104; validation video accuracy 9.2%; validation loss 2.3028; 8.9s
+Epoch 2/20
+  video loss 2.2969; validation video accuracy 10.8%; validation loss 2.2760; 8.0s
+Epoch 3/20
+  video loss 2.2464; validation video accuracy 12.5%; validation loss 2.2664; 8.0s
+Epoch 4/20
+  video loss 2.2216; validation video accuracy 12.5%; validation loss 2.2685; 7.9s
+Epoch 5/20
+  video loss 2.2089; validation video accuracy 16.7%; validation loss 2.2553; 7.9s
+Epoch 6/20
+  video loss 2.1963; validation video accuracy 16.7%; validation loss 2.2343; 8.0s
+Epoch 7/20
+  video loss 2.1646; validation video accuracy 16.7%; validation loss 2.1744; 7.9s
+Epoch 8/20
+  video loss 2.1354; validation video accuracy 19.2%; validation loss 2.1532; 7.9s
+Epoch 9/20
+  video loss 2.1399; validation video accuracy 16.7%; validation loss 2.1556; 7.8s
+Epoch 10/20
+  video loss 2.1120; validation video accuracy 18.3%; validation loss 2.1270; 7.8s
+Epoch 11/20
+  video loss 2.0934; validation video accuracy 14.2%; validation loss 2.1545; 7.7s
+Epoch 12/20
+  video loss 2.0729; validation video accuracy 20.0%; validation loss 2.1448; 7.9s
+Epoch 13/20
+  video loss 2.0413; validation video accuracy 18.3%; validation loss 2.0937; 7.9s
+Epoch 14/20
+  video loss 2.0231; validation video accuracy 18.3%; validation loss 2.1328; 7.9s
+Epoch 15/20
+  video loss 2.0098; validation video accuracy 16.7%; validation loss 2.1166; 7.7s
+Epoch 16/20
+  video loss 1.9592; validation video accuracy 18.3%; validation loss 2.1070; 7.9s
+Epoch 17/20
+  video loss 1.9235; validation video accuracy 19.2%; validation loss 2.1349; 8.0s
+Epoch 18/20
+  video loss 1.9075; validation video accuracy 22.5%; validation loss 2.1038; 7.8s
+Early stopping at epoch 18: validation video loss did not improve by more than 0.0001 for 5 consecutive epochs.
+Best validation accuracy epoch: 18; checkpoint: /zhome/77/b/223344/projects/video-classification-2026/outputs/03_early_fusion_seed42/20261020T152636_607436Z/best.pt
+Lowest validation loss epoch: 13; loss: 2.0937; checkpoint: /zhome/77/b/223344/projects/video-classification-2026/outputs/03_early_fusion_seed42/20261020T152636_607436Z/best_loss.pt
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@hpc.dtu.dk>
+Subject: Job 29763652: <early_fusion> in cluster <dcc> Done
+
+Job <early_fusion> was submitted from host <hpclogin1> by user <s253026> in cluster <dcc> at Tue Oct 20 17:14:14 2026
+Job was executed on host(s) <4*n-62-18-13>, in queue <c02516>, as user <s253026> in cluster <dcc> at Tue Oct 20 17:26:26 2026
+</zhome/77/b/223344> was used as the home directory.
+</zhome/77/b/223344/projects/video-classification-2026> was used as the working directory.
+Started at Tue Oct 20 17:26:26 2026
+Terminated at Tue Oct 20 17:29:00 2026
+Results reported at Tue Oct 20 17:29:00 2026
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -q c02516
+#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -J early_fusion
+#BSUB -n 4
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=5GB]"
+#BSUB -W 12:00
+#BSUB -o logs/early_fusion_%J.out
+#BSUB -e logs/early_fusion_%J.err
+
+set -e
+cd "$LS_SUBCWD"
+module load "${VC_PYTHON_MODULE:?Set the Python module in jobs/submit_all.sh}"
+source .venv/bin/activate
+export OMP_NUM_THREADS=4
+export MKL_NUM_THREADS=4
+
+python -u -m video_classification.train --config configs/03_early_fusion.toml --device cuda
+
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   533.34 sec.
+    Max Memory :                                 948 MB
+    Average Memory :                             939.25 MB
+    Total Requested Memory :                     20480.00 MB
+    Delta Memory :                               19532.00 MB
+    Max Swap :                                   -
+    Max Processes :                              4
+    Max Threads :                                13
+    Run time :                                   154 sec.
+    Turnaround time :                            886 sec.
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file <logs/early_fusion_29763652.err> for stderr output of this job.
+

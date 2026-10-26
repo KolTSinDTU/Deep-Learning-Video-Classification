@@ -1,0 +1,42 @@
+# v2 recipe: Shared encoder; mean-pooled frame features. Warm start: --init-checkpoint <01_per_frame best.pt>.
+# Shared by every v2 config so models differ only in where time is fused.
+# One optimizer step always sees 80 frames (8 videos, or 80 frames for per_frame).
+[experiment]
+name = "02_late_fusion"
+seed = 42
+output_dir = "outputs/v2/02_late_fusion/seed42"
+
+[dataset]
+root = "/dtu/datasets1/02516/ufc10"
+regime = "original"
+num_classes = 10
+num_frames = 10
+# Supplied JPEGs for both regimes, so the leakage comparison changes only the splits.
+frame_source = "provided"
+image_size = 112
+# On-the-fly, in memory: one random crop/flip/jitter per clip; nothing is written to disk.
+augment = true
+# RGB: ImageNet mean/std. Colour flow: inverted so zero motion is 0.
+input_normalization = "standardize"
+
+[model]
+name = "late_fusion"
+backbone = "vgg_bn"
+dropout = 0.5
+
+[training]
+epochs = 60
+# Fixed budget with cosine decay; best.pt is the highest validation accuracy.
+early_stopping_patience = 0
+batch_size = 8
+validation_batch_size = 8
+optimizer = "adamw"
+learning_rate = 0.001
+weight_decay = 0.05
+scheduler = "cosine"
+warmup_epochs = 3
+device = "auto"
+num_workers = 4
+# Storage: keep only best.pt, weights only (~9 MB; ~28 MB for cnn3d, ~19 MB dual stream).
+save_optimizer_state = false
+save_best_loss_checkpoint = false

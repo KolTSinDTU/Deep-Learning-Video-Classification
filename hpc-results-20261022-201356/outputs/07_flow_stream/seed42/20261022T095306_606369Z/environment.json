@@ -1,0 +1,27 @@
+{
+  "python": "3.12.11",
+  "torch": "2.8.0+cu126",
+  "torchvision": "0.23.0+cu126",
+  "numpy": "2.5.2",
+  "device": "cuda",
+  "device_name": "NVIDIA A100 80GB PCIe MIG 1g.10gb",
+  "torch_threads": 4,
+  "optimizer": "AdamW",
+  "weight_decay": 0.05,
+  "scheduler": "cosine",
+  "warmup_epochs": 3,
+  "label_smoothing": 0.0,
+  "backbone": "vgg_bn",
+  "augmentation": "clip-consistent random resized crop (scale 0.5-1), horizontal flip (disabled for colour-coded flow), RGB colour jitter",
+  "initialization": {
+    "method": "random"
+  },
+  "frame_source": "provided",
+  "flow_format": "rgb_png",
+  "flow_preprocessing": "RGB color PNG ToTensor, inverted so zero motion is 0",
+  "preprocessing": "Resize to image_size square; RGB ToTensor in [0, 1]; ImageNet mean/std standardization",
+  "training_unit": "video",
+  "video_aggregation": "Stack all flow fields along channels before the CNN (temporal stream)",
+  "cudnn_deterministic": true,
+  "deterministic_algorithms": false
+}

@@ -1,0 +1,89 @@
+Selected flow weight on validation: 0.55
+  val  rgb_only       accuracy 43.3% (52/120); NLL 2.9101
+  val  flow_only      accuracy 55.8% (67/120); NLL 1.8579
+  val  fused_equal    accuracy 58.3% (70/120); NLL 1.6010
+  val  fused_w0.55    accuracy 58.3% (70/120); NLL 1.5772
+Wrote outputs/v2/fusion/seed42/fusion_val.json
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@hpc.dtu.dk>
+Subject: Job 29780633: <v2_fusion_s42> in cluster <dcc> Done
+
+Job <v2_fusion_s42> was submitted from host <hpclogin1> by user <s253026> in cluster <dcc> at Thu Oct 22 10:03:16 2026
+Job was executed on host(s) <4*n-62-18-13>, in queue <c02516>, as user <s253026> in cluster <dcc> at Thu Oct 22 12:14:28 2026
+</zhome/77/b/223344> was used as the home directory.
+</zhome/77/b/223344/projects/video-classification-2026> was used as the working directory.
+Started at Thu Oct 22 12:14:28 2026
+Terminated at Thu Oct 22 12:14:46 2026
+Results reported at Thu Oct 22 12:14:46 2026
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -q c02516
+#BSUB -app c02516_1g.10gb
+#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -n 4
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=5GB]"
+#BSUB -W 00:30
+
+# Score fusion of the newest RGB and flow runs; submitted by jobs/submit_v2.sh.
+#   VC_RGB_FROM, VC_FLOW_FROM  output directories of the two streams
+#   VC_OUTPUT                  where fusion_val.json is written
+#   VC_TEST=1                  also score the test split (final reporting only)
+
+set -eo pipefail
+cd "${LS_SUBCWD:?Submit with bsub from the project directory}"
+if [[ -n "${VC_PYTHON_MODULE:-}" ]]; then
+    module load "$VC_PYTHON_MODULE"
+elif [[ -f jobs/modules.sh ]]; then
+    source jobs/modules.sh
+fi
+source .venv/bin/activate
+set -u
+
+newest() {
+    find "$1" -mindepth 1 -maxdepth 1 -type d ! -name 'smoke_*' \
+        -exec test -f '{}/best.pt' ';' -exec grep -q '"stop_reason": "max_epochs"' '{}/summary.json' ';' -print | sort | tail -n 1
+}
+rgb=$(newest "${VC_RGB_FROM:?}")
+flow=$(newest "${VC_FLOW_FROM:?}")
+if [[ -z "$rgb" || -z "$flow" ]]; then
+    echo "Missing a completed RGB or flow run" >&2
+    exit 1
+fi
+test_flag=()
+if [[ "${VC_TEST:-0}" == "1" ]]; then
+    test_flag=(--test)
+fi
+exec python -u -m video_classification.fuse --rgb "$rgb/best.pt" --flow "$flow/best.pt" \
+    --output-dir "${VC_OUTPUT:?}" --device cuda "${test_flag[@]}"
+
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   13.03 sec.
+    Max Memory :                                 394 MB
+    Average Memory :                             394.00 MB
+    Total Requested Memory :                     20480.00 MB
+    Delta Memory :                               20086.00 MB
+    Max Swap :                                   -
+    Max Processes :                              3
+    Max Threads :                                6
+    Run time :                                   18 sec.
+    Turnaround time :                            7890 sec.
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file <logs/v2_fusion_s42_29780633.err> for stderr output of this job.
+

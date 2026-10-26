@@ -1,0 +1,24 @@
+{
+  "smoke_test": false,
+  "completed_epochs": 60,
+  "max_epochs": 60,
+  "stopped_early": false,
+  "stop_reason": "max_epochs",
+  "early_stopping": {
+    "enabled": false,
+    "monitor": "val_video_loss",
+    "patience": 0,
+    "min_delta": 0.0001,
+    "reference_loss": 1.5721038202444713,
+    "last_improvement_epoch": 24,
+    "bad_epochs": 36
+  },
+  "best_epoch": 34,
+  "best_val_video_accuracy": 0.5583333333333333,
+  "best_val_video_loss": 1.8579435308774312,
+  "checkpoint": "/zhome/77/b/223344/projects/video-classification-2026/outputs/v2/07_flow_stream/seed42/20261022T095306_606369Z/best.pt",
+  "best_loss_epoch": 24,
+  "minimum_val_video_loss": 1.5721038202444713,
+  "best_loss_checkpoint": null,
+  "elapsed_seconds": 267.79334132699296
+}

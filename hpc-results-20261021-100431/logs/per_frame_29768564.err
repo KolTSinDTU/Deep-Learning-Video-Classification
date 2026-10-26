@@ -1,0 +1,12 @@
+Loaded dependency [python3/3.12.11]: sqlite3/3.50.1
+Loaded dependency [python3/3.12.11]: gcc/14.3.0-binutils-2.44
+Loaded module: python3/3.12.11
+
+Loading python3/3.12.11
+  Loading requirement: sqlite3/3.50.1 gcc/14.3.0-binutils-2.44
+usage: train.py [-h] --config CONFIG [--epochs EPOCHS] [--patience PATIENCE]
+                [--min-delta MIN_DELTA] [--image-size IMAGE_SIZE]
+                [--batch-size BATCH_SIZE] [--device {auto,cpu,cuda}]
+                [--output-dir OUTPUT_DIR] [--init-checkpoint INIT_CHECKPOINT]
+                [--smoke-test]
+train.py: error: [Errno 2] No such file or directory: '/zhome/77/b/223344/projects/video-classification-2026/data/ucf101/ufc10/metadata/train.csv'

@@ -1,0 +1,39 @@
+{
+  "experiment": {
+    "name": "01_per_frame",
+    "seed": 42,
+    "output_dir": "/zhome/77/b/223344/projects/video-classification-2026/outputs/v2/01_per_frame/seed42/20261022T080327_791449Z"
+  },
+  "dataset": {
+    "root": "/dtu/datasets1/02516/ufc10",
+    "regime": "original",
+    "num_classes": 10,
+    "num_frames": 10,
+    "frame_source": "provided",
+    "image_size": 112,
+    "augment": true,
+    "input_normalization": "standardize"
+  },
+  "model": {
+    "name": "per_frame",
+    "backbone": "vgg_bn",
+    "dropout": 0.5
+  },
+  "training": {
+    "epochs": 60,
+    "early_stopping_patience": 0,
+    "batch_size": 80,
+    "validation_batch_size": 8,
+    "optimizer": "adamw",
+    "learning_rate": 0.001,
+    "weight_decay": 0.05,
+    "scheduler": "cosine",
+    "warmup_epochs": 3,
+    "device": "cuda",
+    "num_workers": 4,
+    "save_optimizer_state": false,
+    "save_best_loss_checkpoint": false,
+    "early_stopping_min_delta": 0.0001,
+    "smoke_test": false
+  }
+}

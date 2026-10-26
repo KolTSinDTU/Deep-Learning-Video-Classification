@@ -1,1 +1,61 @@
-\section{Method}
+\input{figures/models}
+
+\section{Models}
+\label{sec:method}
+\paragraph{Shared backbone.}
+Every variant uses the same VGG-style~\cite{simonyan2015vgg} network: four
+stages, each of two $3{\times}3$
+convolution--batch-norm~\cite{ioffe2015batchnorm}--ReLU layers
+(64/128/256/256 channels) followed by $2{\times}2$ max pooling. Global
+average pooling gives a frame feature $h(x_t)\in\mathbb{R}^{256}$, and
+dropout (0.5) precedes a linear classifier (2.33\,M parameters).
+
+\paragraph{Why this backbone.}
+To measure fusion rather than optimisation, every variant must be able to
+fit its training set. Our first backbone, three convolutions without
+normalisation, failed this check. Per-frame aggregation reached 90.8\%
+validation accuracy, but early fusion and the 3D CNN fitted only 29\% and
+42\% of their training videos. Their low validation accuracy (22.5\% and
+32.5\%) therefore reflected underfitting, not missing temporal information.
+The current backbone adds batch normalisation, which stabilises
+optimisation, and a fourth stage, which enlarges the receptive field from
+22\,px (10\% of the frame) to 76\,px (68\%). Together with the warm starts
+below, these changes let every variant fit its training set
+(\cref{sec:experiments}).
+
+\paragraph{Fusion variants (\cref{fig:models}).}
+With logits $z_t=Wh(x_t)+b$ for frame $t$ and $T=10$:
+\begin{align}
+  p_\mathrm{frame}(y\mid V) &= \tfrac{1}{T}\textstyle\sum_t \operatorname{softmax}(z_t)_y,\\
+  p_\mathrm{late}(y\mid V)  &= \operatorname{softmax}\big(W\,\tfrac{1}{T}\textstyle\sum_t h(x_t)+b\big)_y.
+\end{align}
+The per-frame model trains on single frames with their video's label;
+late fusion trains on whole videos. Both ignore frame order. Early fusion
+stacks the frames into a 30-channel image, so only its first convolution
+is wider (2.35\,M parameters) and it sees frame order from the first layer.
+The 3D CNN uses the same layer layout with $3{\times}3{\times}3$ kernels;
+pooling keeps time in the first two stages and halves it in the last two
+($T{:}\;10\to10\to5\to2$), so its final features span the whole clip
+(6.98\,M parameters).
+
+\paragraph{Warm starts.}
+Training video models from scratch on 500 videos is difficult, so late
+fusion, early fusion, and the 3D CNN start from the trained per-frame
+model of the same split. Late fusion copies its weights. Early fusion
+repeats the RGB input kernel over the $T$ frames and divides it by
+$T$~\cite{wang2016tsn}. The 3D CNN inflates every kernel,
+$W^{3D}_{:,:,\tau}=W^{2D}/3$~\cite{carreira2017i3d}. For a static clip,
+both inflated models initially reproduce the per-frame features (approximately, for the 3D
+CNN), so any
+gain must come from motion learned during training.
+
+\paragraph{Two streams.}
+The temporal stream is an early-fusion network over the nine stacked flow
+fields (27 input channels)~\cite{simonyan2014twostream}. The RGB stream is
+the late-fusion model trained on the corrected splits. As in the original
+two-stream work, the streams are trained separately and combined as
+$p=(1-w)\,p_\mathrm{rgb}+w\,p_\mathrm{flow}$, with $w\in\{0,0.05,\dots,1\}$
+chosen on validation; we also report $w=0.5$. As an alternative, a jointly
+trained dual-stream model concatenates both streams' features before one
+linear layer (4.67\,M parameters), with its RGB encoder initialised from
+the per-frame model.

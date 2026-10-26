@@ -1,37 +1,32 @@
-"""A small 3D CNN that learns spatial and temporal features from RGB clips."""
+"""A 3D CNN that learns spatial and temporal features from RGB clips."""
 
 from torch import Tensor, nn
 
-from .normalization import normalize_convolutions
+from .backbone import build_backbone
 
 
 class CNN3D(nn.Module):
-    """Train three spatiotemporal convolution blocks from scratch.
+    """Spatiotemporal convolutions over time, height, and width.
 
-    Each 3x3x3 kernel slides over time, height, and width. Spatial pooling halves
-    height/width while preserving the time axis, so short clips remain valid.
-    Global pooling combines the final features into one vector per video.
+    The small backbone has three 3x3x3 blocks and pools space only. The
+    vgg_bn backbone mirrors the 2D vgg_bn layer-for-layer (so a trained
+    per-frame model can be inflated into it, I3D-style) and halves time in
+    its last two stages, giving every feature a receptive field spanning the
+    whole 10-frame clip. Global pooling yields one vector per video.
     """
 
-    def __init__(self, num_classes: int = 10, *, normalization: str = "none"):
+    def __init__(self, num_classes: int = 10, *, normalization: str = "none",
+                 backbone: str = "small", dropout: float = 0.0):
         super().__init__()
         if type(num_classes) is not int or num_classes <= 0:
             raise ValueError("num_classes must be a positive integer")
-
-        self.features = nn.Sequential(
-            nn.Conv3d(3, 32, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool3d(kernel_size=(1, 2, 2)),
-            nn.Conv3d(32, 64, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool3d(kernel_size=(1, 2, 2)),
-            nn.Conv3d(64, 128, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool3d(kernel_size=(1, 2, 2)),
-            nn.AdaptiveAvgPool3d(1),
-        )
-        self.features = normalize_convolutions(self.features, normalization)
-        self.classifier = nn.Linear(128, num_classes)
+        if not 0 <= dropout < 1:
+            raise ValueError("model.dropout must be in [0, 1)")
+        self.backbone = backbone
+        self.features, feature_dim = build_backbone(backbone, dimensions=3,
+                                                    normalization=normalization)
+        self.dropout = nn.Dropout(dropout)
+        self.classifier = nn.Linear(feature_dim, num_classes)
 
     def forward(self, videos: Tensor) -> Tensor:
         """Map clips [B, 3, T, H, W] to video logits [B, num_classes].
@@ -44,12 +39,14 @@ class CNN3D(nn.Module):
             raise ValueError("videos must have shape [B, 3, T, H, W]")
         if videos.shape[2] == 0:
             raise ValueError("videos must contain at least one frame")
-        if min(videos.shape[-2:]) < 8:
-            raise ValueError("frame height and width must both be at least 8")
+        if min(videos.shape[-2:]) < (16 if self.backbone == "vgg_bn" else 8):
+            raise ValueError("frame height and width must both be at least 8 (16 for vgg_bn)")
+        if self.backbone == "vgg_bn" and videos.shape[2] < 4:
+            raise ValueError("the vgg_bn 3D backbone pools time twice; use at least 4 frames")
 
         # Keep time as a separate dimension throughout the convolution blocks.
         video_features = self.features(videos).flatten(1)
-        return self.classifier(video_features)
+        return self.classifier(self.dropout(video_features))
 
     def predict_video(self, videos: Tensor) -> Tensor:
         """Return video probabilities; use eval() and inference_mode() to evaluate.

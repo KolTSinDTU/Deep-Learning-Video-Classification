@@ -1,0 +1,223 @@
+Job 29780628: configs/v2/06_late_fusion_noleak.toml seed 42 (train)
+n-62-18-13
+Torch: 2.8.0+cu126 GPU: NVIDIA A100 80GB PCIe MIG 1g.10gb
+Run directory: /zhome/77/b/223344/projects/video-classification-2026/outputs/v2/06_late_fusion_noleak/seed42/20261022T091227_700072Z
+Model: late_fusion; device: cuda; training: 500 videos; validation: 120 videos
+Initialized weights from: /zhome/77/b/223344/projects/video-classification-2026/outputs/v2/05_per_frame_noleak/seed42/20261022T085810_607002Z/best.pt (fresh optimizer)
+Early stopping: disabled
+Epoch 1/60
+  video loss 0.3146; validation video accuracy 26.7%; validation loss 4.6993; 14.6s
+Epoch 2/60
+  video loss 0.8343; validation video accuracy 20.8%; validation loss 4.5541; 14.0s
+Epoch 3/60
+  video loss 1.1893; validation video accuracy 27.5%; validation loss 4.9373; 14.0s
+Epoch 4/60
+  video loss 1.1204; validation video accuracy 15.0%; validation loss 4.6550; 14.0s
+Epoch 5/60
+  video loss 1.1010; validation video accuracy 23.3%; validation loss 4.5466; 14.0s
+Epoch 6/60
+  video loss 0.7823; validation video accuracy 28.3%; validation loss 3.8048; 13.9s
+Epoch 7/60
+  video loss 0.6508; validation video accuracy 33.3%; validation loss 2.8559; 14.0s
+Epoch 8/60
+  video loss 0.5523; validation video accuracy 32.5%; validation loss 3.2860; 13.9s
+Epoch 9/60
+  video loss 0.6583; validation video accuracy 25.8%; validation loss 3.9993; 14.0s
+Epoch 10/60
+  video loss 0.7866; validation video accuracy 22.5%; validation loss 5.6991; 13.9s
+Epoch 11/60
+  video loss 0.6324; validation video accuracy 31.7%; validation loss 3.1295; 13.9s
+Epoch 12/60
+  video loss 0.4491; validation video accuracy 35.0%; validation loss 2.6651; 14.0s
+Epoch 13/60
+  video loss 0.4480; validation video accuracy 27.5%; validation loss 3.8850; 14.0s
+Epoch 14/60
+  video loss 0.5942; validation video accuracy 31.7%; validation loss 3.0800; 14.0s
+Epoch 15/60
+  video loss 0.4907; validation video accuracy 25.8%; validation loss 4.6213; 14.0s
+Epoch 16/60
+  video loss 0.4117; validation video accuracy 32.5%; validation loss 3.7148; 14.0s
+Epoch 17/60
+  video loss 0.5076; validation video accuracy 32.5%; validation loss 3.3203; 13.9s
+Epoch 18/60
+  video loss 0.2985; validation video accuracy 35.8%; validation loss 2.9221; 14.0s
+Epoch 19/60
+  video loss 0.2597; validation video accuracy 29.2%; validation loss 3.9141; 14.0s
+Epoch 20/60
+  video loss 0.3811; validation video accuracy 20.0%; validation loss 3.6884; 14.0s
+Epoch 21/60
+  video loss 0.3507; validation video accuracy 43.3%; validation loss 2.9101; 14.0s
+Epoch 22/60
+  video loss 0.2470; validation video accuracy 30.0%; validation loss 3.0388; 14.0s
+Epoch 23/60
+  video loss 0.2755; validation video accuracy 36.7%; validation loss 3.0473; 14.0s
+Epoch 24/60
+  video loss 0.2747; validation video accuracy 35.0%; validation loss 2.6974; 14.0s
+Epoch 25/60
+  video loss 0.3065; validation video accuracy 33.3%; validation loss 3.1730; 14.0s
+Epoch 26/60
+  video loss 0.2957; validation video accuracy 33.3%; validation loss 2.9231; 14.0s
+Epoch 27/60
+  video loss 0.2608; validation video accuracy 28.3%; validation loss 3.0946; 14.0s
+Epoch 28/60
+  video loss 0.2225; validation video accuracy 38.3%; validation loss 2.7427; 14.0s
+Epoch 29/60
+  video loss 0.2023; validation video accuracy 35.8%; validation loss 2.6120; 14.0s
+Epoch 30/60
+  video loss 0.1590; validation video accuracy 30.0%; validation loss 3.0158; 14.0s
+Epoch 31/60
+  video loss 0.1674; validation video accuracy 35.0%; validation loss 2.8030; 14.0s
+Epoch 32/60
+  video loss 0.1877; validation video accuracy 29.2%; validation loss 2.7981; 14.0s
+Epoch 33/60
+  video loss 0.0945; validation video accuracy 34.2%; validation loss 2.8487; 14.0s
+Epoch 34/60
+  video loss 0.1215; validation video accuracy 28.3%; validation loss 3.0514; 13.9s
+Epoch 35/60
+  video loss 0.1255; validation video accuracy 30.8%; validation loss 3.2242; 14.0s
+Epoch 36/60
+  video loss 0.0992; validation video accuracy 33.3%; validation loss 2.9319; 14.0s
+Epoch 37/60
+  video loss 0.1055; validation video accuracy 31.7%; validation loss 2.8838; 14.0s
+Epoch 38/60
+  video loss 0.1052; validation video accuracy 34.2%; validation loss 2.9646; 14.0s
+Epoch 39/60
+  video loss 0.0902; validation video accuracy 35.0%; validation loss 2.8854; 13.9s
+Epoch 40/60
+  video loss 0.0930; validation video accuracy 31.7%; validation loss 3.2004; 14.0s
+Epoch 41/60
+  video loss 0.1039; validation video accuracy 38.3%; validation loss 3.2271; 14.1s
+Epoch 42/60
+  video loss 0.0583; validation video accuracy 35.8%; validation loss 3.1205; 14.1s
+Epoch 43/60
+  video loss 0.1170; validation video accuracy 35.0%; validation loss 3.4576; 14.0s
+Epoch 44/60
+  video loss 0.0719; validation video accuracy 34.2%; validation loss 2.7294; 14.0s
+Epoch 45/60
+  video loss 0.0595; validation video accuracy 38.3%; validation loss 2.9108; 14.1s
+Epoch 46/60
+  video loss 0.0477; validation video accuracy 39.2%; validation loss 2.7157; 14.0s
+Epoch 47/60
+  video loss 0.0475; validation video accuracy 39.2%; validation loss 2.8092; 14.0s
+Epoch 48/60
+  video loss 0.0518; validation video accuracy 35.0%; validation loss 2.7256; 14.1s
+Epoch 49/60
+  video loss 0.0548; validation video accuracy 36.7%; validation loss 2.9507; 14.0s
+Epoch 50/60
+  video loss 0.0470; validation video accuracy 31.7%; validation loss 2.9982; 14.0s
+Epoch 51/60
+  video loss 0.0398; validation video accuracy 32.5%; validation loss 2.7624; 14.0s
+Epoch 52/60
+  video loss 0.0388; validation video accuracy 37.5%; validation loss 2.9304; 14.0s
+Epoch 53/60
+  video loss 0.0219; validation video accuracy 34.2%; validation loss 2.8872; 14.0s
+Epoch 54/60
+  video loss 0.0477; validation video accuracy 37.5%; validation loss 2.8626; 14.0s
+Epoch 55/60
+  video loss 0.0411; validation video accuracy 35.8%; validation loss 2.7792; 14.0s
+Epoch 56/60
+  video loss 0.0327; validation video accuracy 37.5%; validation loss 2.8053; 14.0s
+Epoch 57/60
+  video loss 0.0205; validation video accuracy 35.8%; validation loss 2.9611; 14.0s
+Epoch 58/60
+  video loss 0.0223; validation video accuracy 35.8%; validation loss 2.8177; 14.0s
+Epoch 59/60
+  video loss 0.0277; validation video accuracy 38.3%; validation loss 2.8062; 13.9s
+Epoch 60/60
+  video loss 0.0290; validation video accuracy 33.3%; validation loss 2.9578; 13.9s
+Best validation accuracy epoch: 21; checkpoint: /zhome/77/b/223344/projects/video-classification-2026/outputs/v2/06_late_fusion_noleak/seed42/20261022T091227_700072Z/best.pt
+Lowest validation loss epoch: 29; loss: 2.6120
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@hpc.dtu.dk>
+Subject: Job 29780628: <v2_06_late_fusion_noleak_seed42> in cluster <dcc> Done
+
+Job <v2_06_late_fusion_noleak_seed42> was submitted from host <hpclogin1> by user <s253026> in cluster <dcc> at Thu Oct 22 10:03:14 2026
+Job was executed on host(s) <4*n-62-18-13>, in queue <c02516>, as user <s253026> in cluster <dcc> at Thu Oct 22 11:12:16 2026
+</zhome/77/b/223344> was used as the home directory.
+</zhome/77/b/223344/projects/video-classification-2026> was used as the working directory.
+Started at Thu Oct 22 11:12:16 2026
+Terminated at Thu Oct 22 11:26:29 2026
+Results reported at Thu Oct 22 11:26:29 2026
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -q c02516
+#BSUB -app c02516_1g.10gb
+#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -n 4
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=5GB]"
+#BSUB -W 04:00
+
+# Generic v2 training job; submitted by jobs/submit_v2.sh, which sets:
+#   VC_CONFIG     configs/v2/<name>.toml
+#   VC_OUTPUT     parent directory for this run's timestamped folder
+#   VC_SEED       experiment seed
+#   VC_INIT_FROM  optional: a per-frame output directory; its newest
+#                 non-smoke best.pt initializes this model
+#   VC_RUN_MODE   train or smoke
+
+set -eo pipefail
+cd "${LS_SUBCWD:?Submit with bsub from the project directory}"
+test -f "${VC_CONFIG:?VC_CONFIG is required}"
+
+if [[ -n "${VC_PYTHON_MODULE:-}" ]]; then
+    module load "$VC_PYTHON_MODULE"
+elif [[ -f jobs/modules.sh ]]; then
+    source jobs/modules.sh
+fi
+source .venv/bin/activate
+set -u
+
+export OMP_NUM_THREADS=4
+export MKL_NUM_THREADS=4
+export PYTHONUNBUFFERED=1
+
+extra=(--seed "${VC_SEED:-42}" --output-dir "${VC_OUTPUT:?VC_OUTPUT is required}")
+if [[ "${VC_RUN_MODE:-train}" == "smoke" ]]; then
+    extra+=(--smoke-test)
+fi
+if [[ -n "${VC_INIT_FROM:-}" ]]; then
+    # Run folders are UTC timestamps, so lexical order is chronological.
+    # Runs that were killed or are still running have no "max_epochs" stop reason.
+    source_run=$(find "$VC_INIT_FROM" -mindepth 1 -maxdepth 1 -type d ! -name 'smoke_*' \
+                 -exec test -f '{}/best.pt' ';' -exec grep -q '"stop_reason": "max_epochs"' '{}/summary.json' ';' -print | sort | tail -n 1)
+    if [[ -z "$source_run" ]]; then
+        echo "No completed per-frame run (best.pt, all epochs) in $VC_INIT_FROM" >&2
+        exit 1
+    fi
+    extra+=(--init-checkpoint "$source_run/best.pt")
+fi
+
+echo "Job ${LSB_JOBID}: ${VC_CONFIG} seed ${VC_SEED:-42} (${VC_RUN_MODE:-train})"
+
+(... more ...)
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   1507.91 sec.
+    Max Memory :                                 1082 MB
+    Average Memory :                             1043.88 MB
+    Total Requested Memory :                     20480.00 MB
+    Delta Memory :                               19398.00 MB
+    Max Swap :                                   -
+    Max Processes :                              7
+    Max Threads :                                26
+    Run time :                                   853 sec.
+    Turnaround time :                            4995 sec.
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file <logs/v2_06_late_fusion_noleak_seed42_29780628.err> for stderr output of this job.
+

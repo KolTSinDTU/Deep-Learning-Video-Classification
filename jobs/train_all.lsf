@@ -1,0 +1,50 @@
+#!/bin/bash
+#BSUB -q c02516
+#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -J "video_train[1-4]%1"
+#BSUB -n 4
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=5GB]"
+#BSUB -W 12:00
+#BSUB -o logs/train_%J_%I.out
+#BSUB -e logs/train_%J_%I.err
+
+# Submit from the project directory, after creating logs/:
+# bsub -app c02516_1g.10gb < jobs/train_all.lsf
+# Each array element trains one model; at most one element runs at a time.
+
+set -eo pipefail
+
+# Replace this with the exact Python module used to create your Linux .venv.
+PYTHON_MODULE="YOUR_PYTHON_MODULE"
+if [[ "$PYTHON_MODULE" == "YOUR_PYTHON_MODULE" ]]; then
+    echo "Edit PYTHON_MODULE to match the module used to create .venv." >&2
+    exit 2
+fi
+
+# LS_SUBCWD is the directory from which bsub was called.
+cd "${LS_SUBCWD:?Submit this script with bsub from the project directory}"
+test -f pyproject.toml
+module load "$PYTHON_MODULE"
+source .venv/bin/activate
+set -u
+
+export OMP_NUM_THREADS=4
+export MKL_NUM_THREADS=4
+export PYTHONUNBUFFERED=1
+
+case "${LSB_JOBINDEX:-0}" in
+    1) config=configs/01_per_frame.toml ;;
+    2) config=configs/02_late_fusion.toml ;;
+    3) config=configs/03_early_fusion.toml ;;
+    4) config=configs/04_cnn3d.toml ;;
+    *) echo "Expected a job-array index from 1 through 4." >&2; exit 2 ;;
+esac
+
+echo "Job ${LSB_JOBID}[${LSB_JOBINDEX}]: ${config}"
+hostname
+python --version
+
+exec python -u -m video_classification.train \
+    --config "$config" \
+    --device cuda

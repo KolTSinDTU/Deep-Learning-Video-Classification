@@ -1,1 +1,48 @@
+\section{Discussion}
+\label{sec:discussion}
+\paragraph{What the comparison isolates.}
+Because every variant shares the backbone, recipe, update budget, and
+initial per-frame weights, differences in \cref{tab:fusion} reflect where
+frames are combined, not which network a model received. Under this control, where an
+RGB network fuses time barely matters: the variants are within noise on the
+leaky splits, and on the corrected splits they stay within 7\,pp of each
+other on test (9\,pp on validation), with the two splits disagreeing about
+their order. From 500
+videos, the RGB networks did not learn motion features that reliably
+generalise to new people.
+
+\paragraph{Appearance shortcuts.}
+A drop of 49--57\,pp for every RGB model, with near-perfect training
+accuracy, means that on the leaky splits the task largely reduces to
+recognising people and settings. Leaky evaluation therefore overstates
+accuracy by more than a factor of two, and a model chosen on leaky splits
+says little about how it will perform on new people.
+
+\paragraph{Motion.}
+Optical flow removes most appearance cues by construction, which is why the
+flow stream overfits more slowly and generalises best. RGB still adds
+complementary evidence: the streams fail on different classes, so combining
+them helps whether the streams are fused at the score level or trained
+jointly.
+
+\paragraph{Limitations.}
+Results use one seed and 120 videos per evaluation split; one video is
+0.83\,pp, and the binomial standard error near 50\% accuracy is about
+4.6\,pp. Validation accuracies are also optimistic, because the checkpoint
+is the best of 60 noisy epochs: on the corrected splits, the RGB models
+average only 28--37\% over their last ten epochs. Colour-coded flow is a lossy encoding of
+the displacement vectors and rules out flip augmentation.
+
 \section{Conclusion}
+\label{sec:conclusion}
+We compared four ways of fusing time in a shared 2D/3D backbone, measured
+the effect of person leakage, and added an optical-flow stream. On the
+leaky splits all fusion points perform equally well (91--93\% test
+accuracy). Person-disjoint splits reveal that this performance came mostly
+from recognising people: every RGB model loses 49--57\,pp of test
+accuracy, and the variants become indistinguishable at 35--42\%. Motion is
+the cue that transfers: a flow stream on nine stacked RAFT fields reaches
+49.2\% test accuracy, 7.5\,pp above the best RGB model, and fusing it with
+the RGB stream reaches 54.2\%, 15.8\,pp above RGB alone.
+The main limitation is overfitting on 500 training videos; pretraining the
+RGB stream and averaging over seeds are the natural next steps.

@@ -1,0 +1,114 @@
+per_frame (no_leakage) val: accuracy 40.8% (49/120); NLL 3.3778; macro F1 0.409 -> /zhome/77/b/223344/projects/video-classification-2026/outputs/v2/05_per_frame_noleak/seed42/20261022T085810_607002Z/eval_val.json
+per_frame (no_leakage) test: accuracy 35.0% (42/120); NLL 3.5534; macro F1 0.340 -> /zhome/77/b/223344/projects/video-classification-2026/outputs/v2/05_per_frame_noleak/seed42/20261022T085810_607002Z/eval_test.json
+late_fusion (no_leakage) val: accuracy 43.3% (52/120); NLL 2.9101; macro F1 0.428 -> /zhome/77/b/223344/projects/video-classification-2026/outputs/v2/06_late_fusion_noleak/seed42/20261022T091227_700072Z/eval_val.json
+late_fusion (no_leakage) test: accuracy 38.3% (46/120); NLL 3.1680; macro F1 0.368 -> /zhome/77/b/223344/projects/video-classification-2026/outputs/v2/06_late_fusion_noleak/seed42/20261022T091227_700072Z/eval_test.json
+early_fusion (no_leakage) val: accuracy 40.0% (48/120); NLL 2.4112; macro F1 0.409 -> /zhome/77/b/223344/projects/video-classification-2026/outputs/v2/09_early_fusion_noleak/seed42/20261022T092643_106138Z/eval_val.json
+early_fusion (no_leakage) test: accuracy 36.7% (44/120); NLL 2.4806; macro F1 0.352 -> /zhome/77/b/223344/projects/video-classification-2026/outputs/v2/09_early_fusion_noleak/seed42/20261022T092643_106138Z/eval_test.json
+cnn3d (no_leakage) val: accuracy 34.2% (41/120); NLL 2.4793; macro F1 0.328 -> /zhome/77/b/223344/projects/video-classification-2026/outputs/v2/10_cnn3d_noleak/seed42/20261022T093103_140216Z/eval_val.json
+cnn3d (no_leakage) test: accuracy 41.7% (50/120); NLL 2.5954; macro F1 0.398 -> /zhome/77/b/223344/projects/video-classification-2026/outputs/v2/10_cnn3d_noleak/seed42/20261022T093103_140216Z/eval_test.json
+flow_stream (no_leakage) val: accuracy 55.8% (67/120); NLL 1.8579; macro F1 0.534 -> /zhome/77/b/223344/projects/video-classification-2026/outputs/v2/07_flow_stream/seed42/20261022T095306_606369Z/eval_val.json
+flow_stream (no_leakage) test: accuracy 49.2% (59/120); NLL 1.6337; macro F1 0.504 -> /zhome/77/b/223344/projects/video-classification-2026/outputs/v2/07_flow_stream/seed42/20261022T095306_606369Z/eval_test.json
+dual_stream (no_leakage) val: accuracy 55.0% (66/120); NLL 1.9771; macro F1 0.559 -> /zhome/77/b/223344/projects/video-classification-2026/outputs/v2/08_dual_stream_joint/seed42/20261022T095754_202409Z/eval_val.json
+dual_stream (no_leakage) test: accuracy 54.2% (65/120); NLL 2.1727; macro F1 0.531 -> /zhome/77/b/223344/projects/video-classification-2026/outputs/v2/08_dual_stream_joint/seed42/20261022T095754_202409Z/eval_test.json
+Selected flow weight on validation: 0.55
+  val  rgb_only       accuracy 43.3% (52/120); NLL 2.9101
+  val  flow_only      accuracy 55.8% (67/120); NLL 1.8579
+  val  fused_equal    accuracy 58.3% (70/120); NLL 1.6010
+  val  fused_w0.55    accuracy 58.3% (70/120); NLL 1.5772
+  test rgb_only       accuracy 38.3% (46/120); NLL 3.1680
+  test flow_only      accuracy 49.2% (59/120); NLL 1.6337
+  test fused_equal    accuracy 54.2% (65/120); NLL 1.4226
+  test fused_w0.55    accuracy 54.2% (65/120); NLL 1.4009
+Wrote outputs/v2/fusion/seed42/fusion_val_test.json
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@hpc.dtu.dk>
+Subject: Job 29790069: <v2_test> in cluster <dcc> Done
+
+Job <v2_test> was submitted from host <hpclogin1> by user <s253026> in cluster <dcc> at Thu Oct 22 15:45:37 2026
+Job was executed on host(s) <4*n-62-18-13>, in queue <c02516>, as user <s253026> in cluster <dcc> at Thu Oct 22 15:45:39 2026
+</zhome/77/b/223344> was used as the home directory.
+</zhome/77/b/223344/projects/video-classification-2026> was used as the working directory.
+Started at Thu Oct 22 15:45:39 2026
+Terminated at Thu Oct 22 15:47:46 2026
+Results reported at Thu Oct 22 15:47:46 2026
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -q c02516
+#BSUB -app c02516_1g.10gb
+#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -J v2_test
+#BSUB -n 4
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=5GB]"
+#BSUB -W 01:00
+#BSUB -o logs/v2_test_%J.out
+#BSUB -e logs/v2_test_%J.err
+
+# Final test evaluation of the corrected-split v2 runs, plus two-stream fusion.
+# Submit from the project directory:  bsub < jobs/test_v2.sh
+# Writes eval_val.json/eval_test.json next to each best.pt and
+# outputs/v2/fusion/seed42/fusion_val_test.json. Optional: VC_SEED (default 42).
+
+set -eo pipefail
+cd "${LS_SUBCWD:?Submit with bsub from the project directory}"
+if [[ -n "${VC_PYTHON_MODULE:-}" ]]; then
+    module load "$VC_PYTHON_MODULE"
+elif [[ -f jobs/modules.sh ]]; then
+    source jobs/modules.sh
+fi
+source .venv/bin/activate
+set -u
+seed="${VC_SEED:-42}"
+
+newest() {  # newest run that completed all epochs; ignores killed and smoke runs
+    find "$1" -mindepth 1 -maxdepth 1 -type d ! -name 'smoke_*' \
+        -exec test -f '{}/best.pt' ';' -exec grep -q '"stop_reason": "max_epochs"' '{}/summary.json' ';' -print | sort | tail -n 1
+}
+
+for experiment in 05_per_frame_noleak 06_late_fusion_noleak 09_early_fusion_noleak \
+                  10_cnn3d_noleak 07_flow_stream 08_dual_stream_joint; do
+    run=$(newest "outputs/v2/$experiment/seed$seed")
+    if [[ -z "$run" ]]; then
+        echo "SKIP $experiment: no completed run" >&2
+        continue
+    fi
+    for split in val test; do
+        python -u -m video_classification.evaluate --checkpoint "$run/best.pt" --split "$split" --device cuda
+    done
+done
+
+rgb=$(newest "outputs/v2/06_late_fusion_noleak/seed$seed")
+flow=$(newest "outputs/v2/07_flow_stream/seed$seed")
+python -u -m video_classification.fuse --rgb "$rgb/best.pt" --flow "$flow/best.pt" \
+    --output-dir "outputs/v2/fusion/seed$seed" --test --device cuda
+
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   116.05 sec.
+    Max Memory :                                 318 MB
+    Average Memory :                             287.33 MB
+    Total Requested Memory :                     20480.00 MB
+    Delta Memory :                               20162.00 MB
+    Max Swap :                                   -
+    Max Processes :                              4
+    Max Threads :                                5
+    Run time :                                   127 sec.
+    Turnaround time :                            129 sec.
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file <logs/v2_test_29790069.err> for stderr output of this job.
+

@@ -1,0 +1,17 @@
+#!/bin/bash
+#BSUB -q c02516
+#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -J per_frame
+#BSUB -n 4
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=5GB]"
+#BSUB -W 12:00
+#BSUB -o logs/train_%J.out
+#BSUB -e logs/train_%J.err
+
+set -e
+cd "$HOME/projects/video-classification-2026"
+module load YOUR_PYTHON_MODULE
+source .venv/bin/activate
+
+python -u -m video_classification.train --config configs/01_per_frame.toml --device cuda

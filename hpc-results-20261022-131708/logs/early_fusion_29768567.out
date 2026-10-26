@@ -1,0 +1,62 @@
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@hpc.dtu.dk>
+Subject: Job 29768567: <early_fusion> in cluster <dcc> Exited
+
+Job <early_fusion> was submitted from host <hpclogin1> by user <s253026> in cluster <dcc> at Wed Oct 21 09:08:51 2026
+Job was executed on host(s) <4*n-62-18-13>, in queue <c02516>, as user <s253026> in cluster <dcc> at Wed Oct 21 09:10:23 2026
+</zhome/77/b/223344> was used as the home directory.
+</zhome/77/b/223344/projects/video-classification-2026> was used as the working directory.
+Started at Wed Oct 21 09:10:23 2026
+Terminated at Wed Oct 21 09:10:31 2026
+Results reported at Wed Oct 21 09:10:31 2026
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -q c02516
+#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -J early_fusion
+#BSUB -n 4
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=5GB]"
+#BSUB -W 12:00
+#BSUB -o logs/early_fusion_%J.out
+#BSUB -e logs/early_fusion_%J.err
+
+set -e
+cd "$LS_SUBCWD"
+module load "${VC_PYTHON_MODULE:?Set the Python module in jobs/submit_all.sh}"
+source .venv/bin/activate
+export OMP_NUM_THREADS=4
+export MKL_NUM_THREADS=4
+
+python -u -m video_classification.train --config configs/03_early_fusion.toml --device cuda
+
+------------------------------------------------------------
+
+Exited with exit code 2.
+
+Resource usage summary:
+
+    CPU time :                                   4.10 sec.
+    Max Memory :                                 -
+    Average Memory :                             -
+    Total Requested Memory :                     20480.00 MB
+    Delta Memory :                               -
+    Max Swap :                                   -
+    Max Processes :                              -
+    Max Threads :                                -
+    Run time :                                   8 sec.
+    Turnaround time :                            100 sec.
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file <logs/early_fusion_29768567.err> for stderr output of this job.
+

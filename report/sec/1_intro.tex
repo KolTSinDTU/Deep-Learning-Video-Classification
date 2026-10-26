@@ -1,3 +1,27 @@
 \section{Introduction}
 \label{sec:intro}
-Video classification aims to classify video based on what happens in a given video. 
+Recognising an action from video means combining what each frame shows
+with how it changes over time. We study this on a ten-class workout subset
+of UCF101~\cite{soomro2012ucf101}, where classes such as \emph{PushUps} and
+\emph{WallPushups}, or \emph{JumpingJack} and \emph{JumpRope}, share poses
+and scenes but differ in motion. We ask three questions.
+(i)~Where should a CNN combine the frames: after classifying each one,
+after pooling their features, at the input, or throughout a 3D network
+(Task~4.1)?
+(ii)~How much do the original splits, in which the same people appear in
+training and evaluation, inflate these accuracies (Task~4.2.1)?
+(iii)~Does an optical-flow stream help once identity cues are removed
+(Task~4.2.2)?
+So that the comparison is about the fusion point rather than the network,
+all models share one backbone and one training recipe.
+
+\paragraph{Related work.}
+Karpathy \etal~\cite{karpathy2014largescale} compared single-frame, early,
+late, and slow fusion of 2D CNNs and found single-frame models
+surprisingly strong. C3D~\cite{tran2015c3d} learns spatiotemporal features
+with $3{\times}3{\times}3$ kernels, and I3D~\cite{carreira2017i3d}
+initialises such kernels by inflating trained 2D filters. Two-stream
+networks~\cite{simonyan2014twostream} add a temporal stream on stacked
+optical flow and average the two streams' softmax scores; TSN~\cite{wang2016tsn}
+initialises the flow network from RGB weights. We apply these ideas at small
+scale, training on only 500 videos.

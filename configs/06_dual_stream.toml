@@ -5,11 +5,16 @@ seed = 42
 output_dir = "outputs/06_dual_stream_seed42"
 
 [dataset]
-root = "data/ucf101noleakage"
+root = "/dtu/datasets1/02516/ucf101_noleakage"
 regime = "no_leakage"
 num_classes = 10
 num_frames = 10
-image_size = 224
+image_size = "native"
+# Supplied flow corresponds to the supplied frames, not a newly sampled cache.
+frame_source = "provided"
+# Verify the actual representation before training; use uv_npy + flow_scale for vectors.
+flow_format = "rgb_png"
+# Loads flows_png/<split>/<class>/<video>/flow_1_2.png ... flow_9_10.png directly.
 
 [model]
 name = "dual_stream"
@@ -19,7 +24,8 @@ name = "dual_stream"
 epochs = 20
 early_stopping_patience = 5
 early_stopping_min_delta = 0.0001
-batch_size = 8
+batch_size = 1
+validation_batch_size = 1
 learning_rate = 0.001
 # Zero workers is a portable starting point for Windows and notebooks.
 num_workers = 0

@@ -1,0 +1,18 @@
+{
+  "python": "3.12.11",
+  "torch": "2.8.0+cu126",
+  "torchvision": "0.23.0+cu126",
+  "numpy": "2.5.2",
+  "device": "cuda",
+  "device_name": "NVIDIA A100 80GB PCIe MIG 1g.10gb",
+  "torch_threads": 4,
+  "optimizer": "Adam",
+  "initialization": {
+    "method": "random"
+  },
+  "preprocessing": "Resize to image_size square; RGB ToTensor in [0, 1]",
+  "training_unit": "video",
+  "video_aggregation": "Mean of frame features, then linear classification and softmax",
+  "cudnn_deterministic": true,
+  "deterministic_algorithms": false
+}

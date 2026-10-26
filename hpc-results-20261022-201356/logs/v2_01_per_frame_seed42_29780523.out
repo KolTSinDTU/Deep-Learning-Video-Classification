@@ -1,0 +1,174 @@
+Job 29780523: configs/v2/01_per_frame.toml seed 42 (train)
+n-62-18-13
+Torch: 2.8.0+cu126 GPU: NVIDIA A100 80GB PCIe MIG 1g.10gb
+Run directory: /zhome/77/b/223344/projects/video-classification-2026/outputs/v2/01_per_frame/seed42/20261022T075014_250836Z
+Model: per_frame; device: cuda; training: 5000 frames; validation: 120 videos
+Early stopping: disabled
+Epoch 1/60
+  frame loss 1.7905; validation video accuracy 45.0%; validation loss 1.6082; 37.5s
+Epoch 2/60
+  frame loss 1.3877; validation video accuracy 58.3%; validation loss 1.3601; 14.0s
+Epoch 3/60
+  frame loss 1.0990; validation video accuracy 55.0%; validation loss 1.3586; 14.0s
+Epoch 4/60
+  frame loss 0.8723; validation video accuracy 53.3%; validation loss 1.7219; 13.9s
+Epoch 5/60
+  frame loss 0.6876; validation video accuracy 77.5%; validation loss 0.7710; 14.0s
+Epoch 6/60
+  frame loss 0.5082; validation video accuracy 77.5%; validation loss 0.8992; 14.0s
+Epoch 7/60
+  frame loss 0.4541; validation video accuracy 67.5%; validation loss 1.1606; 14.0s
+Epoch 8/60
+  frame loss 0.3321; validation video accuracy 79.2%; validation loss 0.6996; 14.1s
+Epoch 9/60
+  frame loss 0.3169; validation video accuracy 61.7%; validation loss 1.3495; 14.0s
+Epoch 10/60
+  frame loss 0.2250; validation video accuracy 77.5%; validation loss 0.6780; 14.0s
+Epoch 11/60
+  frame loss 0.1871; validation video accuracy 87.5%; validation loss 0.4663; 14.0s
+Epoch 12/60
+  frame loss 0.1693; validation video accuracy 86.7%; validation loss 0.5236; 14.0s
+Epoch 13/60
+  frame loss 0.1682; validation video accuracy 88.3%; validation loss 0.5124; 14.0s
+Epoch 14/60
+  frame loss 0.1322; validation video accuracy 87.5%; validation loss 0.4554; 14.0s
+Epoch 15/60
+  frame loss 0.1272; validation video accuracy 85.0%; validation loss 0.6853; 14.0s
+Epoch 16/60
+  frame loss 0.1025; validation video accuracy 90.8%; validation loss 0.4914; 14.0s
+Epoch 17/60
+  frame loss 0.0839; validation video accuracy 90.8%; validation loss 0.4044; 14.0s
+Epoch 18/60
+  frame loss 0.0953; validation video accuracy 90.8%; validation loss 0.4164; 14.0s
+Epoch 19/60
+  frame loss 0.0716; validation video accuracy 90.8%; validation loss 0.3559; 14.0s
+Epoch 20/60
+  frame loss 0.0731; validation video accuracy 91.7%; validation loss 0.3846; 14.0s
+Epoch 21/60
+  frame loss 0.0709; validation video accuracy 88.3%; validation loss 0.6114; 14.0s
+Epoch 22/60
+  frame loss 0.0614; validation video accuracy 87.5%; validation loss 0.5011; 14.0s
+Epoch 23/60
+  frame loss 0.0668; validation video accuracy 89.2%; validation loss 0.5092; 14.0s
+Epoch 24/60
+  frame loss 0.0651; validation video accuracy 90.8%; validation loss 0.3900; 14.0s
+Epoch 25/60
+  frame loss 0.0488; validation video accuracy 90.8%; validation loss 0.4129; 14.0s
+Epoch 26/60
+  frame loss 0.0451; validation video accuracy 91.7%; validation loss 0.4377; 14.0s
+Epoch 27/60
+  frame loss 0.0398; validation video accuracy 88.3%; validation loss 0.4367; 14.0s
+Epoch 28/60
+  frame loss 0.0364; validation video accuracy 93.3%; validation loss 0.4473; 14.0s
+Epoch 29/60
+  frame loss 0.0331; validation video accuracy 91.7%; validation loss 0.5325; 14.0s
+Epoch 30/60
+  frame loss 0.0264; validation video accuracy 90.8%; validation loss 0.4394; 14.0s
+Epoch 31/60
+  frame loss 0.0247; validation video accuracy 91.7%; validation loss 0.4091; 14.0s
+Epoch 32/60
+  frame loss 0.0223; validation video accuracy 90.0%; validation loss 0.4726; 14.0s
+Epoch 33/60
+  frame loss 0.0178; validation video accuracy 90.8%; validation loss 0.4517; 14.0s
+Epoch 34/60
+  frame loss 0.0223; validation video accuracy 89.2%; validation loss 0.5122; 14.0s
+Epoch 35/60
+  frame loss 0.0147; validation video accuracy 91.7%; validation loss 0.3766; 14.0s
+Epoch 36/60
+  frame loss 0.0100; validation video accuracy 93.3%; validation loss 0.3616; 14.0s
+Epoch 37/60
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@hpc.dtu.dk>
+Subject: Job 29780523: <v2_01_per_frame_seed42> in cluster <dcc> Exited
+
+Job <v2_01_per_frame_seed42> was submitted from host <hpclogin1> by user <s253026> in cluster <dcc> at Thu Oct 22 09:47:02 2026
+Job was executed on host(s) <4*n-62-18-13>, in queue <c02516>, as user <s253026> in cluster <dcc> at Thu Oct 22 09:47:04 2026
+</zhome/77/b/223344> was used as the home directory.
+</zhome/77/b/223344/projects/video-classification-2026> was used as the working directory.
+Started at Thu Oct 22 09:47:04 2026
+Terminated at Thu Oct 22 09:59:21 2026
+Results reported at Thu Oct 22 09:59:21 2026
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -q c02516
+#BSUB -app c02516_1g.10gb
+#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -n 4
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=5GB]"
+#BSUB -W 04:00
+
+# Generic v2 training job; submitted by jobs/submit_v2.sh, which sets:
+#   VC_CONFIG     configs/v2/<name>.toml
+#   VC_OUTPUT     parent directory for this run's timestamped folder
+#   VC_SEED       experiment seed
+#   VC_INIT_FROM  optional: a per-frame output directory; its newest
+#                 non-smoke best.pt initializes this model
+#   VC_RUN_MODE   train or smoke
+
+set -eo pipefail
+cd "${LS_SUBCWD:?Submit with bsub from the project directory}"
+test -f "${VC_CONFIG:?VC_CONFIG is required}"
+
+if [[ -n "${VC_PYTHON_MODULE:-}" ]]; then
+    module load "$VC_PYTHON_MODULE"
+elif [[ -f jobs/modules.sh ]]; then
+    source jobs/modules.sh
+fi
+source .venv/bin/activate
+set -u
+
+export OMP_NUM_THREADS=4
+export MKL_NUM_THREADS=4
+export PYTHONUNBUFFERED=1
+
+extra=(--seed "${VC_SEED:-42}" --output-dir "${VC_OUTPUT:?VC_OUTPUT is required}")
+if [[ "${VC_RUN_MODE:-train}" == "smoke" ]]; then
+    extra+=(--smoke-test)
+fi
+if [[ -n "${VC_INIT_FROM:-}" ]]; then
+    # Run folders are UTC timestamps, so lexical order is chronological.
+    source_run=$(find "$VC_INIT_FROM" -mindepth 1 -maxdepth 1 -type d ! -name 'smoke_*' \
+                 -exec test -f '{}/best.pt' ';' -print | sort | tail -n 1)
+    if [[ -z "$source_run" ]]; then
+        echo "No completed per-frame run with best.pt in $VC_INIT_FROM" >&2
+        exit 1
+    fi
+    extra+=(--init-checkpoint "$source_run/best.pt")
+fi
+
+echo "Job ${LSB_JOBID}: ${VC_CONFIG} seed ${VC_SEED:-42} (${VC_RUN_MODE:-train})"
+hostname
+
+(... more ...)
+------------------------------------------------------------
+
+TERM_OWNER: job killed by owner.
+Exited with exit code 143.
+
+Resource usage summary:
+
+    CPU time :                                   965.22 sec.
+    Max Memory :                                 1103 MB
+    Average Memory :                             823.14 MB
+    Total Requested Memory :                     20480.00 MB
+    Delta Memory :                               19377.00 MB
+    Max Swap :                                   -
+    Max Processes :                              7
+    Max Threads :                                26
+    Run time :                                   737 sec.
+    Turnaround time :                            739 sec.
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file <logs/v2_01_per_frame_seed42_29780523.err> for stderr output of this job.
+

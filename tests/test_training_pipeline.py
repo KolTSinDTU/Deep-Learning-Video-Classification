@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch
 from uuid import uuid4
 
+import numpy as np
 from PIL import Image
 import torch
 from torch import nn
@@ -84,6 +85,85 @@ class TrainingPipelineTests(unittest.TestCase):
         self.write_split("val", swap_labels=True)
         with self.assertRaisesRegex(ValueError, "disagrees"):
             build_dataloaders(self.config)
+
+    def test_native_resolution_preserves_decoded_pixels_and_rectangular_shapes(self):
+        self.config["dataset"]["image_size"] = "native"
+        # A spatially varying frame detects changes beyond just the output shape.
+        pixels = torch.arange(240 * 320 * 3).remainder(256).byte().reshape(240, 320, 3)
+        for path in (self.data / "frames").rglob("*.jpg"):
+            Image.fromarray(pixels.numpy()).save(path)
+        loaders = build_dataloaders(self.config)
+        frames, _ = next(iter(loaders["train"]))
+        self.assertEqual(frames.shape, (3, 3, 240, 320))
+        clips, _ = next(iter(loaders["val"]))
+        self.assertEqual(clips.shape, (1, 3, 2, 240, 320))
+        path = loaders["val"].dataset.records[0][2][0]
+        with Image.open(path) as decoded:
+            expected = torch.from_numpy(np.array(decoded.convert("RGB"))).float()
+        expected = expected.permute(2, 0, 1) / 255
+        torch.testing.assert_close(clips[0, :, 0], expected, rtol=0, atol=0)
+        for name in ("per_frame", "late_fusion", "early_fusion", "cnn3d"):
+            with self.subTest(model=name):
+                self.config["model"]["name"] = name
+                model = build_model(self.config)
+                inputs = clips[:, :, 0] if name == "per_frame" else clips
+                logits = model(inputs)
+                self.assertEqual(logits.shape, (1, 2))
+                loss = nn.functional.cross_entropy(logits, torch.tensor([0]))
+                loss.backward()
+                self.assertTrue(torch.isfinite(loss))
+
+    def test_native_training_records_preprocessing_for_all_models(self):
+        self.config["dataset"]["image_size"] = "native"
+        for name in ("per_frame", "late_fusion", "early_fusion", "cnn3d"):
+            with self.subTest(model=name), contextlib.redirect_stdout(io.StringIO()):
+                self.config["model"]["name"] = name
+                run = train(self.config, smoke_test=True)
+                saved = json.loads((run / "config.json").read_text())
+                self.assertEqual(saved["dataset"]["image_size"], "native")
+                environment = json.loads((run / "environment.json").read_text())
+                self.assertIn("Native source resolution", environment["preprocessing"])
+
+    def test_native_video_source_uses_separate_png_cache(self):
+        cache = self.root / "native_cache"
+        self.config["dataset"].update(image_size="native", frame_source="native_video",
+                                      frame_cache_root=str(cache))
+        for split in ("train", "val"):
+            for action in ("squats", "jumps"):
+                folder = cache / split / action / f"{split}_{action}"
+                folder.mkdir(parents=True)
+                for index in (1, 2):
+                    Image.new("RGB", (32, 24), (index * 40, 20, 30)).save(folder / f"frame_{index}.png")
+                (folder / "sampling.json").write_text(json.dumps({"num_frames": 2}))
+        loaders = build_dataloaders(self.config)
+        clips, _ = next(iter(loaders["val"]))
+        self.assertEqual(clips.shape, (1, 3, 2, 24, 32))
+        self.assertEqual(loaders["train"].dataset[0][0].shape, (3, 24, 32))
+        (folder / "sampling.json").write_text(json.dumps({"num_frames": 10}))
+        with self.assertRaisesRegex(ValueError, "cache frame count"):
+            build_dataloaders(self.config)
+
+    def test_image_size_config_validation(self):
+        template = (Path(__file__).resolve().parents[1] / "configs/01_per_frame.toml").read_text()
+        config_path = self.root / "image_size.toml"
+        for value in ('"native"', '16', '"unknown"', 'true', '0', '-1', '7', '16.5'):
+            with self.subTest(value=value):
+                config_path.write_text(template.replace('image_size = "native"', f'image_size = {value}'))
+                if value in ('"native"', '16'):
+                    load_config(config_path)
+                else:
+                    with self.assertRaisesRegex(ValueError, "image_size"):
+                        load_config(config_path)
+
+    def test_cli_can_select_native_or_square_resolution(self):
+        for value, expected in (("native", "native"), ("112", 112)):
+            with self.subTest(value=value), patch("sys.argv", [
+                "train", "--config", "unused.toml", "--image-size", value
+            ]):
+                with patch("video_classification.train.load_config", return_value=self.config):
+                    with patch("video_classification.train.train") as run:
+                        main()
+                self.assertEqual(run.call_args.args[0]["dataset"]["image_size"], expected)
 
     def test_video_models_load_whole_videos_for_training(self):
         for name in ("late_fusion", "early_fusion", "cnn3d"):

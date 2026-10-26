@@ -10,7 +10,9 @@ root = "data/ucf101noleakage"
 regime = "no_leakage"
 num_classes = 10
 num_frames = 10
-image_size = 224
+image_size = "native"
+frame_source = "native_video"
+frame_cache_root = "data/native_frames/no_leakage"
 
 [model]
 name = "per_frame"

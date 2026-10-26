@@ -5,18 +5,20 @@ seed = 42
 output_dir = "outputs/04_cnn3d_seed42"
 
 [dataset]
-root = "data/ucf101/ufc10"
+root = "/dtu/datasets1/02516/ufc10"
 regime = "original"
 num_classes = 10
 num_frames = 10
-image_size = 224
+image_size = "native"
+frame_source = "native_video"
+frame_cache_root = "data/native_frames/original"
 
 [model]
 name = "cnn3d"
 
 [training]
 # Upper limit; validation-loss early stopping may finish sooner.
-epochs = 20
+epochs = 50
 early_stopping_patience = 5
 early_stopping_min_delta = 0.0001
 # Each batch contains a complete clip; start small for CPU memory use.

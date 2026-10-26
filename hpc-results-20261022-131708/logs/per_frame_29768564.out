@@ -1,0 +1,62 @@
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@hpc.dtu.dk>
+Subject: Job 29768564: <per_frame> in cluster <dcc> Exited
+
+Job <per_frame> was submitted from host <hpclogin1> by user <s253026> in cluster <dcc> at Wed Oct 21 09:08:50 2026
+Job was executed on host(s) <4*n-62-18-13>, in queue <c02516>, as user <s253026> in cluster <dcc> at Wed Oct 21 09:08:52 2026
+</zhome/77/b/223344> was used as the home directory.
+</zhome/77/b/223344/projects/video-classification-2026> was used as the working directory.
+Started at Wed Oct 21 09:08:52 2026
+Terminated at Wed Oct 21 09:10:09 2026
+Results reported at Wed Oct 21 09:10:09 2026
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -q c02516
+#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -J per_frame
+#BSUB -n 4
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=5GB]"
+#BSUB -W 12:00
+#BSUB -o logs/per_frame_%J.out
+#BSUB -e logs/per_frame_%J.err
+
+set -e
+cd "$LS_SUBCWD"
+module load "${VC_PYTHON_MODULE:?Set the Python module in jobs/submit_all.sh}"
+source .venv/bin/activate
+export OMP_NUM_THREADS=4
+export MKL_NUM_THREADS=4
+
+python -u -m video_classification.train --config configs/01_per_frame.toml --device cuda
+
+------------------------------------------------------------
+
+Exited with exit code 2.
+
+Resource usage summary:
+
+    CPU time :                                   8.53 sec.
+    Max Memory :                                 38 MB
+    Average Memory :                             38.00 MB
+    Total Requested Memory :                     20480.00 MB
+    Delta Memory :                               20442.00 MB
+    Max Swap :                                   -
+    Max Processes :                              4
+    Max Threads :                                5
+    Run time :                                   77 sec.
+    Turnaround time :                            79 sec.
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file <logs/per_frame_29768564.err> for stderr output of this job.
+

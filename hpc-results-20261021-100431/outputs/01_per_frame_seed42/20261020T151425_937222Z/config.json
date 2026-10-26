@@ -1,0 +1,28 @@
+{
+  "experiment": {
+    "name": "01_per_frame",
+    "seed": 42,
+    "output_dir": "/zhome/77/b/223344/projects/video-classification-2026/outputs/01_per_frame_seed42/20261020T151425_937222Z"
+  },
+  "dataset": {
+    "root": "/dtu/datasets1/02516/ufc10",
+    "regime": "original",
+    "num_classes": 10,
+    "num_frames": 10,
+    "image_size": 224
+  },
+  "model": {
+    "name": "per_frame"
+  },
+  "training": {
+    "epochs": 20,
+    "early_stopping_patience": 5,
+    "early_stopping_min_delta": 0.0001,
+    "batch_size": 8,
+    "validation_batch_size": 1,
+    "device": "cuda",
+    "learning_rate": 0.001,
+    "num_workers": 0,
+    "smoke_test": false
+  }
+}

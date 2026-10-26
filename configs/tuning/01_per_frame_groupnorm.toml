@@ -1,5 +1,5 @@
-# Controlled trial: only GroupNorm differs from the baseline at 112 pixels.
-# Compare with a baseline using --image-size 112 and the same epoch budget.
+# Controlled trial: only GroupNorm differs from the baseline at native resolution.
+# Compare with a baseline using --image-size native and the same epoch budget.
 [experiment]
 name = "01_per_frame_groupnorm"
 seed = 42
@@ -10,7 +10,9 @@ root = "data/ucf101/ufc10"
 regime = "original"
 num_classes = 10
 num_frames = 10
-image_size = 112
+image_size = "native"
+frame_source = "native_video"
+frame_cache_root = "data/native_frames/original"
 
 [model]
 name = "per_frame"

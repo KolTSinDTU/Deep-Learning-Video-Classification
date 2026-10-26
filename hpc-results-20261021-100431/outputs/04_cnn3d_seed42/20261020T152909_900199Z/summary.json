@@ -1,0 +1,24 @@
+{
+  "smoke_test": false,
+  "completed_epochs": 20,
+  "max_epochs": 20,
+  "stopped_early": false,
+  "stop_reason": "max_epochs",
+  "early_stopping": {
+    "enabled": true,
+    "monitor": "val_video_loss",
+    "patience": 5,
+    "min_delta": 0.0001,
+    "reference_loss": 1.9201226566607754,
+    "last_improvement_epoch": 18,
+    "bad_epochs": 2
+  },
+  "best_epoch": 17,
+  "best_val_video_accuracy": 0.30833333333333335,
+  "best_val_video_loss": 2.024876904239257,
+  "checkpoint": "/zhome/77/b/223344/projects/video-classification-2026/outputs/04_cnn3d_seed42/20261020T152909_900199Z/best.pt",
+  "best_loss_epoch": 18,
+  "minimum_val_video_loss": 1.9201226566607754,
+  "best_loss_checkpoint": "/zhome/77/b/223344/projects/video-classification-2026/outputs/04_cnn3d_seed42/20261020T152909_900199Z/best_loss.pt",
+  "elapsed_seconds": 404.29973868699744
+}

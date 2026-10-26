@@ -1,0 +1,119 @@
+Job 29776269: dual_stream (train)
+n-62-18-13
+Torch: 2.8.0+cu126 GPU: NVIDIA A100 80GB PCIe MIG 1g.10gb
+Run directory: /zhome/77/b/223344/projects/video-classification-2026/outputs/06_dual_stream_seed42/20261021T143912_362358Z
+Model: dual_stream; device: cuda; training: 500 videos; validation: 120 videos
+Early stopping: validation video loss; patience=5; min_delta=0.0001
+Epoch 1/20
+  video loss 2.2511; validation video accuracy 20.8%; validation loss 2.1886; 41.3s
+Epoch 2/20
+  video loss 2.1286; validation video accuracy 30.8%; validation loss 2.0609; 38.0s
+Epoch 3/20
+  video loss 2.0032; validation video accuracy 26.7%; validation loss 2.0105; 37.7s
+Epoch 4/20
+  video loss 1.9190; validation video accuracy 23.3%; validation loss 2.1026; 37.3s
+Epoch 5/20
+  video loss 1.8089; validation video accuracy 24.2%; validation loss 2.0385; 37.8s
+Epoch 6/20
+  video loss 1.7072; validation video accuracy 30.8%; validation loss 2.0711; 37.6s
+Epoch 7/20
+  video loss 1.6237; validation video accuracy 30.8%; validation loss 2.2528; 38.1s
+Epoch 8/20
+  video loss 1.5181; validation video accuracy 27.5%; validation loss 2.2259; 37.8s
+Early stopping at epoch 8: validation video loss did not improve by more than 0.0001 for 5 consecutive epochs.
+Best validation accuracy epoch: 2; checkpoint: /zhome/77/b/223344/projects/video-classification-2026/outputs/06_dual_stream_seed42/20261021T143912_362358Z/best.pt
+Lowest validation loss epoch: 3; loss: 2.0105; checkpoint: /zhome/77/b/223344/projects/video-classification-2026/outputs/06_dual_stream_seed42/20261021T143912_362358Z/best_loss.pt
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@hpc.dtu.dk>
+Subject: Job 29776269: <dual_stream> in cluster <dcc> Done
+
+Job <dual_stream> was submitted from host <hpclogin1> by user <s253026> in cluster <dcc> at Wed Oct 21 16:36:38 2026
+Job was executed on host(s) <4*n-62-18-13>, in queue <c02516>, as user <s253026> in cluster <dcc> at Wed Oct 21 16:36:41 2026
+</zhome/77/b/223344> was used as the home directory.
+</zhome/77/b/223344/projects/video-classification-2026> was used as the working directory.
+Started at Wed Oct 21 16:36:41 2026
+Terminated at Wed Oct 21 16:44:21 2026
+Results reported at Wed Oct 21 16:44:21 2026
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -q c02516
+#BSUB -app c02516_1g.10gb
+#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -J dual_stream
+#BSUB -n 4
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=5GB]"
+#BSUB -W 12:00
+#BSUB -o logs/dual_stream_%J.out
+#BSUB -e logs/dual_stream_%J.err
+
+# Submit with one command (the wrapper creates logs/ and invokes bsub):
+#   bash jobs/submit_dual_stream.sh
+# Optional short check: bash jobs/submit_dual_stream.sh smoke
+# Use the same loaded modules as your working .venv. To explicitly load Python,
+# export VC_PYTHON_MODULE with that module's name before submitting.
+
+set -eo pipefail
+cd "${LS_SUBCWD:?Submit with bsub from the project directory}"
+test -f configs/06_dual_stream.toml
+
+if [[ -n "${VC_PYTHON_MODULE:-}" ]]; then
+    module load "$VC_PYTHON_MODULE"
+elif [[ -f jobs/modules.sh ]]; then
+    source jobs/modules.sh
+fi
+source .venv/bin/activate
+set -u
+
+export OMP_NUM_THREADS=4
+export MKL_NUM_THREADS=4
+export PYTHONUNBUFFERED=1
+
+extra=()
+case "${VC_RUN_MODE:-train}" in
+    smoke) extra+=(--smoke-test) ;;
+    pilot) extra+=(--epochs 2) ;;
+    train) ;;
+    *) echo "VC_RUN_MODE must be smoke, pilot or train." >&2; exit 2 ;;
+esac
+
+echo "Job ${LSB_JOBID}: dual_stream (${VC_RUN_MODE:-train})"
+hostname
+python -c 'import torch; assert torch.cuda.is_available(), "CUDA unavailable"; print("Torch:", torch.__version__, "GPU:", torch.cuda.get_device_name(0))'
+
+exec python -u -m video_classification.train \
+    --config configs/06_dual_stream.toml \
+    --device cuda \
+    "${extra[@]}"
+
+(... more ...)
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   779.78 sec.
+    Max Memory :                                 979 MB
+    Average Memory :                             824.00 MB
+    Total Requested Memory :                     20480.00 MB
+    Delta Memory :                               19501.00 MB
+    Max Swap :                                   -
+    Max Processes :                              4
+    Max Threads :                                12
+    Run time :                                   460 sec.
+    Turnaround time :                            463 sec.
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file <logs/dual_stream_29776269.err> for stderr output of this job.
+

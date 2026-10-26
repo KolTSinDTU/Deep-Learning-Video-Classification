@@ -12,15 +12,19 @@ dependencies = [
     "torch==2.8.0",
     "torchvision==0.23.0",
     "numpy>=1.26,<3",
-    "pandas>=2.2,<3",
     "Pillow>=10,<13",
-    "matplotlib>=3.8,<4",
-    "scikit-learn>=1.4,<2",
     "tqdm>=4.66,<5",
 ]
 
 [project.optional-dependencies]
-notebooks = ["jupyterlab>=4,<5", "ipykernel>=6,<8"]
+analysis = ["pandas>=2.2,<3", "matplotlib>=3.8,<4", "scikit-learn>=1.4,<2"]
+notebooks = [
+    "jupyterlab>=4,<5",
+    "ipykernel>=6,<8",
+    "pandas>=2.2,<3",
+    "matplotlib>=3.8,<4",
+    "scikit-learn>=1.4,<2",
+]
 
 [project.scripts]
 video-project = "video_classification.cli:main"

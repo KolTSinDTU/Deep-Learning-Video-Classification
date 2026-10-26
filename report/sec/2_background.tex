@@ -1,3 +1,29 @@
-\section{Background}
-\label{sec:background}
+\section{Data and setup}
+\label{sec:data}
+\paragraph{Splits.}
+The original splits contain 500/120/120 training/validation/test videos, balanced over
+ten classes. They were taken from Kaggle and place clips of the same person
+in several splits. The corrected splits, which keep each person in a single
+split, contain 500/120/120 videos. Each video is represented by ten
+uniformly sampled RGB frames. The corrected data also provides nine
+RAFT~\cite{teed2020raft} flow fields between consecutive frames, stored as
+colour-wheel images (hue encodes direction, saturation encodes magnitude).
 
+\paragraph{Preprocessing and augmentation.}
+Frames are resized to $112{\times}112$ and standardised with ImageNet
+statistics; flow images are inverted so that zero motion (white) maps to 0.
+During training, each clip receives one random resized crop (scale
+0.5--1), horizontal flip, and colour jitter, shared by all its frames so
+that augmentation does not create spurious motion. Flips are disabled for
+flow, because mirroring a colour-coded field would not reverse the encoded
+direction.
+
+\paragraph{Training and evaluation.}
+All models use AdamW~\cite{loshchilov2019adamw} (learning rate $10^{-3}$,
+weight decay 0.05), three warm-up epochs, and cosine decay over a fixed
+60 epochs. Every update sees 80 frames, either eight videos or, for the
+per-frame model, 80 independent frames, so all models receive the same
+number of updates and frames. We keep the checkpoint with the highest
+validation video accuracy and evaluate each selected model once on the
+test set. One validation video corresponds to 0.83 percentage points (pp).
+All results use a single seed (42).

@@ -1,0 +1,114 @@
+Run directory: /zhome/77/b/223344/projects/video-classification-2026/outputs/04_cnn3d_seed42/20261021T074842_549366Z
+Model: cnn3d; device: cuda; training: 500 videos; validation: 120 videos
+Early stopping: validation video loss; patience=5; min_delta=0.0001
+Epoch 1/50
+  video loss 2.3063; validation video accuracy 12.5%; validation loss 2.2799; 20.5s
+Epoch 2/50
+  video loss 2.2579; validation video accuracy 13.3%; validation loss 2.2583; 19.0s
+Epoch 3/50
+  video loss 2.2333; validation video accuracy 14.2%; validation loss 2.2565; 19.2s
+Epoch 4/50
+  video loss 2.2158; validation video accuracy 12.5%; validation loss 2.2651; 19.4s
+Epoch 5/50
+  video loss 2.2062; validation video accuracy 14.2%; validation loss 2.2529; 19.3s
+Epoch 6/50
+  video loss 2.1883; validation video accuracy 15.0%; validation loss 2.2772; 19.7s
+Epoch 7/50
+  video loss 2.1631; validation video accuracy 16.7%; validation loss 2.2276; 19.2s
+Epoch 8/50
+  video loss 2.1378; validation video accuracy 15.8%; validation loss 2.2319; 19.5s
+Epoch 9/50
+  video loss 2.1480; validation video accuracy 16.7%; validation loss 2.1874; 20.0s
+Epoch 10/50
+  video loss 2.1066; validation video accuracy 15.8%; validation loss 2.1759; 20.3s
+Epoch 11/50
+  video loss 2.0979; validation video accuracy 12.5%; validation loss 2.1814; 20.8s
+Epoch 12/50
+  video loss 2.0695; validation video accuracy 20.0%; validation loss 2.1128; 20.9s
+Epoch 13/50
+  video loss 2.0392; validation video accuracy 19.2%; validation loss 2.0962; 20.8s
+Epoch 14/50
+  video loss 2.0078; validation video accuracy 27.5%; validation loss 2.0529; 20.8s
+Epoch 15/50
+  video loss 1.9471; validation video accuracy 21.7%; validation loss 2.1805; 20.5s
+Epoch 16/50
+  video loss 1.8806; validation video accuracy 25.0%; validation loss 2.1582; 20.8s
+Epoch 17/50
+  video loss 1.8510; validation video accuracy 30.8%; validation loss 2.0249; 20.5s
+Epoch 18/50
+  video loss 1.8150; validation video accuracy 29.2%; validation loss 1.9201; 20.5s
+Epoch 19/50
+  video loss 1.7657; validation video accuracy 30.0%; validation loss 2.2711; 21.0s
+Epoch 20/50
+  video loss 1.7196; validation video accuracy 26.7%; validation loss 2.0877; 20.9s
+Epoch 21/50
+  video loss 1.7328; validation video accuracy 32.5%; validation loss 1.9821; 20.6s
+Epoch 22/50
+  video loss 1.6884; validation video accuracy 32.5%; validation loss 1.9499; 20.6s
+Epoch 23/50
+  video loss 1.6325; validation video accuracy 30.8%; validation loss 1.9329; 20.8s
+Early stopping at epoch 23: validation video loss did not improve by more than 0.0001 for 5 consecutive epochs.
+Best validation accuracy epoch: 22; checkpoint: /zhome/77/b/223344/projects/video-classification-2026/outputs/04_cnn3d_seed42/20261021T074842_549366Z/best.pt
+Lowest validation loss epoch: 18; loss: 1.9201; checkpoint: /zhome/77/b/223344/projects/video-classification-2026/outputs/04_cnn3d_seed42/20261021T074842_549366Z/best_loss.pt
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@hpc.dtu.dk>
+Subject: Job 29768625: <cnn3d> in cluster <dcc> Done
+
+Job <cnn3d> was submitted from host <hpclogin1> by user <s253026> in cluster <dcc> at Wed Oct 21 09:21:23 2026
+Job was executed on host(s) <4*n-62-18-13>, in queue <c02516>, as user <s253026> in cluster <dcc> at Wed Oct 21 09:48:36 2026
+</zhome/77/b/223344> was used as the home directory.
+</zhome/77/b/223344/projects/video-classification-2026> was used as the working directory.
+Started at Wed Oct 21 09:48:36 2026
+Terminated at Wed Oct 21 09:56:29 2026
+Results reported at Wed Oct 21 09:56:29 2026
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -q c02516
+#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -J cnn3d
+#BSUB -n 4
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=5GB]"
+#BSUB -W 12:00
+#BSUB -o logs/cnn3d_%J.out
+#BSUB -e logs/cnn3d_%J.err
+
+set -e
+cd "$LS_SUBCWD"
+module load "${VC_PYTHON_MODULE:?Set the Python module in jobs/submit_all.sh}"
+source .venv/bin/activate
+export OMP_NUM_THREADS=4
+export MKL_NUM_THREADS=4
+
+python -u -m video_classification.train --config configs/04_cnn3d.toml --device cuda
+
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   1131.39 sec.
+    Max Memory :                                 903 MB
+    Average Memory :                             878.00 MB
+    Total Requested Memory :                     20480.00 MB
+    Delta Memory :                               19577.00 MB
+    Max Swap :                                   -
+    Max Processes :                              4
+    Max Threads :                                13
+    Run time :                                   473 sec.
+    Turnaround time :                            2106 sec.
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file <logs/cnn3d_29768625.err> for stderr output of this job.
+

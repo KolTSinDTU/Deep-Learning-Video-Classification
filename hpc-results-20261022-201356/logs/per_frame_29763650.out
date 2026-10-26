@@ -1,0 +1,107 @@
+Run directory: /zhome/77/b/223344/projects/video-classification-2026/outputs/01_per_frame_seed42/20261020T151425_937222Z
+Model: per_frame; device: cuda; training: 5000 frames; validation: 120 videos
+Early stopping: validation video loss; patience=5; min_delta=0.0001
+Epoch 1/20
+  frame loss 2.1538; validation video accuracy 20.0%; validation loss 2.1576; 22.3s
+Epoch 2/20
+  frame loss 1.9552; validation video accuracy 31.7%; validation loss 2.0383; 17.1s
+Epoch 3/20
+  frame loss 1.7605; validation video accuracy 30.8%; validation loss 1.9413; 18.3s
+Epoch 4/20
+  frame loss 1.5560; validation video accuracy 44.2%; validation loss 1.7502; 17.0s
+Epoch 5/20
+  frame loss 1.3808; validation video accuracy 46.7%; validation loss 1.5491; 16.6s
+Epoch 6/20
+  frame loss 1.2069; validation video accuracy 60.0%; validation loss 1.3308; 16.6s
+Epoch 7/20
+  frame loss 1.0184; validation video accuracy 60.0%; validation loss 1.3268; 17.4s
+Epoch 8/20
+  frame loss 0.8815; validation video accuracy 60.8%; validation loss 1.1947; 16.6s
+Epoch 9/20
+  frame loss 0.7615; validation video accuracy 67.5%; validation loss 1.1017; 16.5s
+Epoch 10/20
+  frame loss 0.6228; validation video accuracy 73.3%; validation loss 0.9227; 16.5s
+Epoch 11/20
+  frame loss 0.5303; validation video accuracy 71.7%; validation loss 0.9509; 18.0s
+Epoch 12/20
+  frame loss 0.4370; validation video accuracy 79.2%; validation loss 0.7673; 17.0s
+Epoch 13/20
+  frame loss 0.3826; validation video accuracy 78.3%; validation loss 0.7844; 16.5s
+Epoch 14/20
+  frame loss 0.3317; validation video accuracy 81.7%; validation loss 0.7203; 17.6s
+Epoch 15/20
+  frame loss 0.2906; validation video accuracy 82.5%; validation loss 0.7131; 17.2s
+Epoch 16/20
+  frame loss 0.2772; validation video accuracy 81.7%; validation loss 0.7036; 17.5s
+Epoch 17/20
+  frame loss 0.2137; validation video accuracy 85.0%; validation loss 0.6082; 17.1s
+Epoch 18/20
+  frame loss 0.2119; validation video accuracy 81.7%; validation loss 0.6682; 17.1s
+Epoch 19/20
+  frame loss 0.1570; validation video accuracy 87.5%; validation loss 0.6022; 18.2s
+Epoch 20/20
+  frame loss 0.1567; validation video accuracy 78.3%; validation loss 0.7660; 18.2s
+Best validation accuracy epoch: 19; checkpoint: /zhome/77/b/223344/projects/video-classification-2026/outputs/01_per_frame_seed42/20261020T151425_937222Z/best.pt
+Lowest validation loss epoch: 19; loss: 0.6022; checkpoint: /zhome/77/b/223344/projects/video-classification-2026/outputs/01_per_frame_seed42/20261020T151425_937222Z/best_loss.pt
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@hpc.dtu.dk>
+Subject: Job 29763650: <per_frame> in cluster <dcc> Done
+
+Job <per_frame> was submitted from host <hpclogin1> by user <s253026> in cluster <dcc> at Tue Oct 20 17:14:14 2026
+Job was executed on host(s) <4*n-62-18-13>, in queue <c02516>, as user <s253026> in cluster <dcc> at Tue Oct 20 17:14:16 2026
+</zhome/77/b/223344> was used as the home directory.
+</zhome/77/b/223344/projects/video-classification-2026> was used as the working directory.
+Started at Tue Oct 20 17:14:16 2026
+Terminated at Tue Oct 20 17:20:16 2026
+Results reported at Tue Oct 20 17:20:16 2026
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -q c02516
+#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -J per_frame
+#BSUB -n 4
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=5GB]"
+#BSUB -W 12:00
+#BSUB -o logs/per_frame_%J.out
+#BSUB -e logs/per_frame_%J.err
+
+set -e
+cd "$LS_SUBCWD"
+module load "${VC_PYTHON_MODULE:?Set the Python module in jobs/submit_all.sh}"
+source .venv/bin/activate
+export OMP_NUM_THREADS=4
+export MKL_NUM_THREADS=4
+
+python -u -m video_classification.train --config configs/01_per_frame.toml --device cuda
+
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   929.57 sec.
+    Max Memory :                                 924 MB
+    Average Memory :                             914.25 MB
+    Total Requested Memory :                     20480.00 MB
+    Delta Memory :                               19556.00 MB
+    Max Swap :                                   -
+    Max Processes :                              4
+    Max Threads :                                13
+    Run time :                                   360 sec.
+    Turnaround time :                            362 sec.
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file <logs/per_frame_29763650.err> for stderr output of this job.
+

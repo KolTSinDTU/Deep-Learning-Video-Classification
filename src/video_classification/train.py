@@ -1,4 +1,4 @@
-"""Train 2D and 3D single-stream models using video validation."""
+"""Train RGB, flow, and dual-stream models using video validation."""
 
 import argparse
 import copy
@@ -6,6 +6,7 @@ import csv
 from datetime import datetime, timezone
 from itertools import islice
 import json
+import math
 from pathlib import Path
 import platform
 import random
@@ -18,7 +19,7 @@ from torch import nn
 import torchvision
 from tqdm import tqdm
 
-from .config import PROJECT_ROOT, early_stopping_settings, load_config
+from .config import MODEL_NAMES, PROJECT_ROOT, early_stopping_settings, load_config, validate_image_size
 from .data import build_dataloaders
 from .initialization import initialize_model
 from .models import build_model
@@ -30,14 +31,25 @@ def _batches(loader, limit, description):
                 disable=not sys.stderr.isatty())
 
 
-def _train_epoch(model, loader, optimizer, device, limit=None, *, sample_unit="frame"):
+def _to_device(inputs, device):
+    if isinstance(inputs, dict):
+        return {key: value.to(device) for key, value in inputs.items()}
+    return inputs.to(device)
+
+
+def _forward(model, inputs):
+    return model(**inputs) if isinstance(inputs, dict) else model(inputs)
+
+
+def _train_epoch(model, loader, optimizer, device, limit=None, *, sample_unit="frame",
+                 label_smoothing=0.0):
     model.train()
     loss_sum, correct, count = 0.0, 0, 0
     for inputs, labels in _batches(loader, limit, f"Training {sample_unit}s"):
-        inputs, labels = inputs.to(device), labels.to(device)
+        inputs, labels = _to_device(inputs, device), labels.to(device)
         optimizer.zero_grad(set_to_none=True)
-        logits = model(inputs)
-        loss = nn.functional.cross_entropy(logits, labels)
+        logits = _forward(model, inputs)
+        loss = nn.functional.cross_entropy(logits, labels, label_smoothing=label_smoothing)
         if not torch.isfinite(loss):
             raise RuntimeError("Non-finite training loss; inspect inputs and learning rate")
         loss.backward()
@@ -54,9 +66,9 @@ def _validate(model, loader, device, limit=None, *, video_logits=False):
     model.eval()
     loss_sum, correct, count = 0.0, 0, 0
     for videos, labels in _batches(loader, limit, "Validation videos"):
-        videos, labels = videos.to(device), labels.to(device)
+        videos, labels = _to_device(videos, device), labels.to(device)
         if video_logits:
-            logits = model(videos)
+            logits = _forward(model, videos)
             loss = nn.functional.cross_entropy(logits, labels, reduction="sum")
             predictions = logits.argmax(1)
         else:
@@ -71,6 +83,46 @@ def _validate(model, loader, device, limit=None, *, video_logits=False):
         loss_sum += loss.item()
         correct += (predictions == labels).sum().item()
     return {"loss": loss_sum / count, "accuracy": correct / count, "count": count}
+
+
+def build_optimizer(model, training: dict):
+    """Adam (baseline), AdamW (decoupled weight decay), or SGD with momentum."""
+    name = training.get("optimizer", "adam")
+    rate, decay = training["learning_rate"], training.get("weight_decay", 0.0)
+    if name == "adam":
+        return torch.optim.Adam(model.parameters(), lr=rate, weight_decay=decay)
+    if name == "sgd":
+        return torch.optim.SGD(model.parameters(), lr=rate, momentum=0.9, weight_decay=decay)
+    # Exclude BN/bias parameters from weight decay, as is standard.
+    decayed = [p for p in model.parameters() if p.ndim > 1]
+    others = [p for p in model.parameters() if p.ndim <= 1]
+    return torch.optim.AdamW([{"params": decayed, "weight_decay": decay},
+                              {"params": others, "weight_decay": 0.0}], lr=rate)
+
+
+def build_scheduler(optimizer, training: dict):
+    """Per-epoch learning-rate multiplier: linear warmup, then cosine to zero."""
+    if training.get("scheduler", "none") == "none":
+        return None
+    epochs = training["epochs"]
+    warmup = min(training.get("warmup_epochs", 0), epochs - 1)
+
+    def factor(epoch):  # epoch is the number of completed epochs
+        if epoch < warmup:
+            return (epoch + 1) / (warmup + 1)
+        progress = (epoch - warmup) / max(1, epochs - warmup)
+        return 0.5 * (1 + math.cos(math.pi * progress))
+
+    return torch.optim.lr_scheduler.LambdaLR(optimizer, factor)
+
+
+def _augmentation_description(data: dict, flow_model: bool) -> str:
+    if not data.get("augment", False):
+        return "none"
+    flip = "horizontal flip"
+    if flow_model and data["flow_format"] == "rgb_png":
+        flip += " (disabled for colour-coded flow)"
+    return f"clip-consistent random resized crop (scale 0.5-1), {flip}, RGB colour jitter"
 
 
 def _write_json(path, value):
@@ -88,11 +140,12 @@ def train(config: dict, *, smoke_test: bool = False) -> Path:
     """
     config = copy.deepcopy(config)
     model_name = config["model"]["name"]
-    if model_name not in {"per_frame", "late_fusion", "early_fusion", "cnn3d"}:
-        raise NotImplementedError("Training supports per_frame, late_fusion, early_fusion, and cnn3d")
+    if model_name not in MODEL_NAMES:
+        raise ValueError(f"Unknown model: {model_name}")
     sample_unit = "frame" if model_name == "per_frame" else "video"
-    if config["dataset"]["image_size"] < 8:
-        raise ValueError("dataset.image_size must be at least 8 for these CNNs")
+    data = config["dataset"]
+    flow_model = model_name in {"dual_stream", "flow_stream"}
+    validate_image_size(config["dataset"]["image_size"])
     training = config["training"]
     patience, min_delta = early_stopping_settings(training)
     training["early_stopping_patience"] = patience
@@ -125,7 +178,8 @@ def train(config: dict, *, smoke_test: bool = False) -> Path:
     model = build_model(config).to(device)
     mapping = loaders["train"].dataset.class_to_label
     initialization = initialize_model(model, config, mapping)
-    optimizer = torch.optim.Adam(model.parameters(), lr=training["learning_rate"])
+    optimizer = build_optimizer(model, training)
+    scheduler = build_scheduler(optimizer, training)
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S_%fZ")
     run_dir = Path(config["experiment"]["output_dir"]) / (
@@ -143,15 +197,40 @@ def train(config: dict, *, smoke_test: bool = False) -> Path:
         "device": str(device),
         "device_name": torch.cuda.get_device_name(device) if device.type == "cuda" else platform.processor(),
         "torch_threads": torch.get_num_threads(),
-        "optimizer": "Adam",
+        "optimizer": {"adam": "Adam", "adamw": "AdamW", "sgd": "SGD"}[training.get("optimizer", "adam")],
+        "weight_decay": training.get("weight_decay", 0.0),
+        "scheduler": training.get("scheduler", "none"),
+        "warmup_epochs": training.get("warmup_epochs", 0),
+        "label_smoothing": training.get("label_smoothing", 0.0),
+        "backbone": config["model"].get("backbone", "small"),
+        "augmentation": _augmentation_description(data, flow_model),
         "initialization": initialization,
-        "preprocessing": "Resize to image_size square; RGB ToTensor in [0, 1]",
+        "frame_source": config["dataset"].get("frame_source", "provided"),
+        "flow_format": data.get("flow_format") if flow_model else None,
+        "flow_preprocessing": (
+            (("RGB color PNG ToTensor, inverted so zero motion is 0"
+              if data.get("input_normalization", "none") == "standardize"
+              else "RGB color PNG ToTensor in [0, 1]") if data["flow_format"] == "rgb_png"
+             else f"Pixel displacement vectors; spatial resize rescales u/v; divide by {data['flow_scale']}")
+            if flow_model else None
+        ),
+        "preprocessing": (
+            ("Native source resolution" if data["image_size"] == "native"
+             else "Resize to image_size square") + "; RGB ToTensor in [0, 1]"
+            + ("; ImageNet mean/std standardization"
+               if data.get("input_normalization", "none") == "standardize" else "")
+        ),
         "training_unit": sample_unit,
         "video_aggregation": {
             "per_frame": "Mean of frame softmax probabilities",
             "late_fusion": "Mean of frame features, then linear classification and softmax",
             "early_fusion": "Stack RGB frames in temporal order along channels before the CNN",
             "cnn3d": "Spatiotemporal 3D convolutions, then global pooling and classification",
+            "dual_stream": ("Independent RGB/flow encoders; temporal mean RGB features; "
+                            + ("stacked flow fields" if config["model"].get("flow_input", "mean") == "stack"
+                               else "temporal mean flow features")
+                            + "; concatenation and learned classifier"),
+            "flow_stream": "Stack all flow fields along channels before the CNN (temporal stream)",
         }[model_name],
         "cudnn_deterministic": torch.backends.cudnn.deterministic,
         "deterministic_algorithms": torch.are_deterministic_algorithms_enabled(),
@@ -178,7 +257,7 @@ def train(config: dict, *, smoke_test: bool = False) -> Path:
     train_count_key = f"train_{sample_unit}s"
     fields = ["epoch", train_loss_key, train_accuracy_key, train_count_key,
               "val_video_loss", "val_video_accuracy", "val_videos", "seconds",
-              "early_stopping_bad_epochs"]
+              "early_stopping_bad_epochs", "learning_rate"]
     best_key = (-1.0, float("-inf"))
     best_epoch = 0
     minimum_loss = float("inf")
@@ -195,9 +274,13 @@ def train(config: dict, *, smoke_test: bool = False) -> Path:
         for epoch in range(1, training["epochs"] + 1):
             epoch_started = time.perf_counter()
             print(f"Epoch {epoch}/{training['epochs']}", flush=True)
+            current_rate = optimizer.param_groups[0]["lr"]
             training_metrics = _train_epoch(
-                model, loaders["train"], optimizer, device, limit, sample_unit=sample_unit
+                model, loaders["train"], optimizer, device, limit, sample_unit=sample_unit,
+                label_smoothing=training.get("label_smoothing", 0.0),
             )
+            if scheduler is not None:
+                scheduler.step()
             validation_metrics = _validate(
                 model, loaders["val"], device, limit, video_logits=(model_name != "per_frame")
             )
@@ -228,6 +311,7 @@ def train(config: dict, *, smoke_test: bool = False) -> Path:
                 "val_videos": validation_metrics["count"],
                 "seconds": time.perf_counter() - epoch_started,
                 "early_stopping_bad_epochs": bad_epochs,
+                "learning_rate": current_rate,
             }
             # Prefer highest video accuracy, then lowest video NLL on ties.
             key = (validation_metrics["accuracy"], -validation_metrics["loss"])
@@ -237,11 +321,16 @@ def train(config: dict, *, smoke_test: bool = False) -> Path:
                 checkpoints_to_save.append(("best.pt", "val_video_accuracy"))
             if validation_metrics["loss"] < minimum_loss:
                 minimum_loss, best_loss_epoch = validation_metrics["loss"], epoch
-                checkpoints_to_save.append(("best_loss.pt", "val_video_loss"))
+                if training.get("save_best_loss_checkpoint", True):
+                    checkpoints_to_save.append(("best_loss.pt", "val_video_loss"))
             if checkpoints_to_save:
+                # Optimizer state roughly triples checkpoint size; it is only
+                # needed to resume, which this trainer does not do.
+                optimizer_state = (optimizer.state_dict()
+                                   if training.get("save_optimizer_state", True) else None)
                 checkpoint = {
                     "model_state_dict": model.state_dict(),
-                    "optimizer_state_dict": optimizer.state_dict(),
+                    "optimizer_state_dict": optimizer_state,
                     "config": config,
                     "class_to_label": mapping,
                     "epoch": epoch,
@@ -271,7 +360,8 @@ def train(config: dict, *, smoke_test: bool = False) -> Path:
                 "checkpoint": str(run_dir / "best.pt"),
                 "best_loss_epoch": best_loss_epoch,
                 "minimum_val_video_loss": minimum_loss,
-                "best_loss_checkpoint": str(run_dir / "best_loss.pt"),
+                "best_loss_checkpoint": (str(run_dir / "best_loss.pt")
+                                         if training.get("save_best_loss_checkpoint", True) else None),
                 "elapsed_seconds": time.perf_counter() - started,
             })
             print(f"  {sample_unit} loss {row[train_loss_key]:.4f}; "
@@ -286,8 +376,9 @@ def train(config: dict, *, smoke_test: bool = False) -> Path:
 
     print(f"Best validation accuracy epoch: {best_epoch}; checkpoint: {run_dir / 'best.pt'}",
           flush=True)
-    print(f"Lowest validation loss epoch: {best_loss_epoch}; "
-          f"loss: {minimum_loss:.4f}; checkpoint: {run_dir / 'best_loss.pt'}", flush=True)
+    print(f"Lowest validation loss epoch: {best_loss_epoch}; loss: {minimum_loss:.4f}"
+          + (f"; checkpoint: {run_dir / 'best_loss.pt'}"
+             if training.get("save_best_loss_checkpoint", True) else ""), flush=True)
     return run_dir
 
 
@@ -312,6 +403,12 @@ def _nonnegative_float(value):
     return number
 
 
+def _image_size(value):
+    if value == "native":
+        return value
+    return _positive_int(value)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
@@ -320,13 +417,17 @@ def main():
                         help="Epochs without a significant validation-loss decrease; 0 disables stopping")
     parser.add_argument("--min-delta", type=_nonnegative_float,
                         help="Minimum absolute validation-loss decrease to reset patience")
-    parser.add_argument("--image-size", type=_positive_int, help="Override the square frame size")
+    parser.add_argument("--image-size", type=_image_size,
+                        help="native preserves source resolution; an integer resizes to a square")
     parser.add_argument("--batch-size", type=_positive_int,
                         help="Training batch size: frames for per_frame, videos for fusion/3D models")
     parser.add_argument("--device", choices=("auto", "cpu", "cuda"))
+    parser.add_argument("--seed", type=_nonnegative_int, help="Override experiment.seed")
+    parser.add_argument("--num-workers", type=_nonnegative_int, help="Override training.num_workers")
     parser.add_argument("--output-dir", type=Path, help="Parent for new run directories")
     parser.add_argument("--init-checkpoint", type=Path,
-                        help="Initialize late fusion from per-frame weights; starts a fresh optimizer")
+                        help="Initialize late/early fusion, cnn3d (vgg_bn), or the dual-stream "
+                             "RGB encoder from per-frame weights; starts a fresh optimizer")
     parser.add_argument("--smoke-test", action="store_true",
                         help="Check 2 train/val batches in one epoch; save separately")
     args = parser.parse_args()
@@ -339,6 +440,8 @@ def main():
             (args.device, "training", "device"),
             (args.patience, "training", "early_stopping_patience"),
             (args.min_delta, "training", "early_stopping_min_delta"),
+            (args.seed, "experiment", "seed"),
+            (args.num_workers, "training", "num_workers"),
         ):
             if argument is not None:
                 config[section][key] = argument

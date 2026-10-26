@@ -1,0 +1,92 @@
+\section{Experiments and discussion}
+\label{sec:experiments}
+
+\subsection{Single-stream comparison (Task 4.1)}
+All four models are trained from random initialization using Adam with
+learning rate $10^{-3}$, seed 42, and a maximum of 50 epochs. The cluster
+runs use PyTorch 2.8.0 with CUDA on an NVIDIA A100 GPU partition
+(MIG 1g.10gb). Early stopping monitors validation video loss with patience
+five and a minimum improvement of $10^{-4}$. Stopping and checkpoint
+selection are distinct: we report the highest-accuracy checkpoint, with
+lower validation loss breaking ties, rather than automatically taking the
+last epoch or the lowest-loss checkpoint.
+
+Per-frame training uses batches of eight frames, giving 625 optimizer
+updates per epoch from 5,000 frames. Late and early fusion use batches of
+two videos (250 updates per epoch), while the 3D CNN uses one video per
+batch (500 updates). Validation uses one video per batch for every model.
+Per-frame, early fusion, and the 3D CNN stop after 31, 18, and 23 epochs;
+late fusion reaches the 50-epoch limit. Total updates are therefore 19,375,
+12,500, 4,500, and 11,500 for per-frame, late fusion, early fusion, and 3D
+CNN, respectively. This is a comparison under a shared stopping rule,
+not equal optimization or computation budgets.
+
+\input{generated/baseline_table}
+
+Per-frame aggregation achieves the highest validation accuracy at 90.8\%
+(109/120 videos), followed by late fusion at 75.0\% (90/120), the 3D CNN
+at 32.5\% (39/120), and early fusion at 22.5\% (27/120).
+Table~\ref{tab:baselines} reports accuracy and loss at the same selected
+checkpoint. For example, per-frame accuracy peaks at epoch 22, whereas its
+lowest validation loss is 0.422 at epoch 26, with 88.3\% accuracy. Thus,
+minimum loss and maximum accuracy need not identify the same epoch.
+
+\paragraph{Learning curves.}
+Figure~\ref{fig:learning} places all training and validation losses on one
+set of axes. Per-frame loss falls fastest, but validation loss fluctuates
+above its epoch-26 minimum before stopping. Late fusion improves over a
+longer period: its validation loss falls from 2.295 to 0.969 at epoch 46,
+then rises to 1.145 by epoch 50 while training loss continues to decrease.
+This late divergence is consistent with some overfitting. Early fusion and
+the 3D CNN finish with training losses of 1.907 and 1.633 and training
+accuracies of 29.0\% and 41.6\%, respectively. Their weak validation
+performance coincides with incomplete training-set fit; these runs do not
+establish that the architectures lack useful temporal information. In
+particular, loss-based early stopping can halt training despite continued
+improvement in accuracy, as in early fusion.
+
+Per-frame training loss is frame-level cross-entropy, whereas validation
+loss is video-level negative log-likelihood after probability averaging.
+Their gap is not a like-for-like generalization gap. The other models use
+video cross-entropy for both splits. Training losses average batches during
+weight updates; validation uses the end-of-epoch model. All results use one
+seed and the original splits with subject overlap. They identify per-frame
+aggregation as the current candidate for the corrected-split experiment,
+but cannot establish its performance on unseen subjects. Test results
+remain pending.
+
+\subsection{Corrected-split comparison (Task 4.2.1)}
+\label{sec:corrected}
+\textbf{Draft status: corrected-split results are pending.}
+Per-frame aggregation is selected using the original-split validation
+results. Retrain it from random initialization
+on the supplied corrected training split, keeping the architecture,
+preprocessing, learning rate, seed, and training budget matched to the
+original-split experiment. Use each regime's validation set for checkpoint
+selection, then evaluate the selected checkpoints on their respective test
+sets. Record the corrected split sizes and report accuracy changes in
+percentage points. If the training recipe changes, rerun the original
+baseline under that recipe too.
+
+A drop would be consistent with optimistic evaluation under subject
+overlap, but its magnitude must be measured. The split populations also
+change, so the comparison is not a paired experiment on identical test
+videos. No corrected-split score or leakage-related drop is claimed here.
+
+\subsection{RGB and optical flow (Task 4.2.2)}
+\label{sec:dualstream}
+\textbf{Draft status: dual-stream implementation and results are pending.}
+Two-stream networks combine an appearance stream with a motion stream
+based on optical flow~\cite{simonyan2014twostream}. The corrected course
+dataset supplies flow generated using RAFT~\cite{course2026,teed2020raft}.
+Before finalizing the flow encoder, inspect the supplied representation,
+its channel count, and its alignment with the RGB frames. In particular,
+colored flow PNGs must not be described as raw horizontal and vertical
+displacement fields without verifying their encoding.
+
+The remaining experiment will compare RGB-only, flow-only, and fused
+predictions on the corrected splits. Document the actual encoders,
+normalization, fusion operation, and training schedule, and select any
+fusion weight using validation data. Train any source encoder on corrected
+training data as well. Report final test results only after model selection;
+the current draft makes no claim that optical flow improves accuracy.

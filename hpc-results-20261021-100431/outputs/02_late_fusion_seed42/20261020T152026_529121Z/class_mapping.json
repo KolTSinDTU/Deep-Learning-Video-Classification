@@ -1,0 +1,12 @@
+{
+  "BodyWeightSquats": 0,
+  "HandstandPushups": 1,
+  "HandstandWalking": 2,
+  "JumpRope": 4,
+  "JumpingJack": 3,
+  "Lunges": 5,
+  "PullUps": 6,
+  "PushUps": 7,
+  "TrampolineJumping": 8,
+  "WallPushups": 9
+}
